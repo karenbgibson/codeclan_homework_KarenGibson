@@ -1,0 +1,207 @@
+---
+title: "`dplyr` Weekend Homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+```
+<br>
+
+# MVP
+
+### First steps
+
+Load necessary packages and read in `books.csv`. Investigate dimensions, variables, missing values - you know the drill!
+
+__Answer__
+
+```{r}
+library(tidyverse)
+```
+```{r}
+books <- read.csv("data/books.csv")
+
+books
+```
+
+```{r}
+# Investigating dimensions in `books` dataset
+
+books %>% 
+  dim()
+
+
+# Investing variables in `books` dataset
+
+books %>% 
+  names()
+
+books %>% 
+ glimpse()
+
+# Investigating missing values
+
+books %>% 
+  summarise(
+    across(
+      everything(),
+      ~sum(is.na(.))
+    ))
+
+```
+
+
+### Up to you
+
+Now it's up to you... For this weekend homework there will be no specific tasks, just you and this dataset! Using everything you've learned this week, try to describe/summarise at least 5 things about this dataset - using R and the tidyverse of course! Feel free to find and use new functions if there is something that the tidyverse doesn't offer, but do try to use this homework to apply what you have learned this week. Be prepared to share one of your findings on Monday!
+
+__Dataset insights #1: Making our data more digestable__
+
+For this exercise we will look at the popularity of books and their authors. We will first tidy the data by creating a new tibble with only the relevant data included:
+
+```{r}
+#selecting only relevant variables for analysis throughout this homework assignment
+
+books_homework <- books %>% 
+  select(title, authors, average_rating, ratings_count, publication_date)
+
+books_homework
+```
+We now have a much neater dataset with only 6 variables.
+
+
+__Data insights #2: Missing values__
+
+When we investigated our missing values at the beginning of this exercise, we saw that there are no standard NAs anywhere in the data. However, on visual inspection of the tibble, we can see books with:
+`number of pages` = 0
+`average rating` = 0,
+`text reviews count` and 
+`ratings count` = 0
+
+As most review sites mandate a minimum review score of one star, we will assume that books with an average_rating of 0 have never been reviewed. We will remove these from our dataset:
+
+```{r}
+
+# We first change all "0"s in the average_ratings column to NA and then remove them by using the drop_na function
+
+books_homework <- books_homework %>% 
+  mutate(
+    average_rating = na_if(
+      average_rating, "0")
+    ) %>%
+  drop_na()
+
+#The new tibble with average_rating Nas removed is assigned to our books_homework variable
+  
+books_homework
+
+```
+
+Now when reviewing the tibble we can see 11,098 rows, compared to 11,123 that we started with. This confirms that 25 books have been removed from the dataset as they had a ratings count of 0.
+
+Looking at the remaining data, we can see that there a number of books that have a ratings count of 0 yet have an average rating > 0. Let's count these to see how many there are:
+
+```{r}
+
+#First we count how many books have missing ratings count data
+books_homework %>% 
+  mutate(
+    ratings_count = na_if(
+      ratings_count, "0")
+  ) %>%
+  summarise(
+    count = sum
+    (is.na(
+      ratings_count)))
+
+# The count of 55 represents 4% of our data. Let's assume the data is missing in error and convert our '0's in the ratings_count column to NAs
+
+books_homework <- books_homework %>% 
+  mutate(
+    ratings_count = na_if(
+      ratings_count, "0")
+  )
+
+books_homework
+
+  
+```
+
+__Dataset insight #3: Busiest Authors__
+
+Now let's investigate how many books by each author in the dataset:
+
+```{r}
+
+#First we group the data by author and then summarise the number of books per author
+
+number_of_books_per_author <- books_homework %>% 
+  group_by(authors) %>% 
+  summarise(author_count = n()
+            )
+
+number_of_books_per_author
+
+#We then arrange the data and select top 5 by author count to find the top 5 most represented authors:
+busiest_authors <- number_of_books_per_author %>% 
+  arrange(desc(
+    author_count)) %>% 
+  head(5)
+
+busiest_authors
+
+
+```
+The first tibble above shows us that there are 6,616 different authors represented in our dataset, with a range from 1 book to 40 books. 
+
+The second tibble shows the top 5 most represented authors in the dataset, with number of books ranging from 33 to 40. 
+
+__Data insight #4: mean of the average rating__ 
+
+Now we will look at the mean of the average rating. 
+
+```{r}
+
+#Finding the average ratings for all books and pulling the answer as a number
+
+all_books_average <-
+  books_homework %>% 
+  summarise(mean(average_rating)) %>% 
+  pull()
+
+all_books_average
+
+```
+
+__Data insight #5: above or below average?__
+
+Now we can take the all_books_average categorise each books to confirm whether it's average rating is above or below the overall average. 
+
+```{r}
+
+# adding a row to our data frame to categorise whether a book's rating is above or below average
+
+books_homework <- books_homework %>% 
+   mutate(ratings_category = all_books_average) %>% 
+  mutate(ratings_category = case_when(
+    average_rating > 
+      ratings_category ~ "Above average",
+    average_rating < 
+      ratings_category ~ "Below average"
+    ))
+
+books_homework
+
+```
+
+
+### Remember
+
+Before you submit, go through your weekend homework and make sure your code is following best practices as laid out in the `coding_best_practice` lesson.
