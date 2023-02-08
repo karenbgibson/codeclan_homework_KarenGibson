@@ -189,11 +189,21 @@ Try a regex pattern `"c\\("`. The double backslash is necessary in R to mark a b
 
 **Answer 8**
 
+
+```{r}
+
+codeclan_hashtags %>%
+  mutate(first_letter = str_sub(hashtags, 1, 2))
+
+
+```
+
 ```{r}
 
 codeclan_hashtags %>%
   mutate(more_than_one_hashtag = str_detect(hashtags, "[c]\\(")) %>% 
-  summarise(sum(more_than_one_hashtag == TRUE))
+   summarise(sum(more_than_one_hashtag == TRUE))
+ 
 
 ```
 
@@ -229,4 +239,42 @@ Use `str_extract_all()` with a regular expression to find out which Twitter user
 <summary>**Hint**</summary>
 Think about all the different characters which could be in a Twitter username, do a bit of online research
 </details>
+
+**Answer 10**
+
+```{r}
+
+user_pattern <- "@[a-zA-Z0-9_]+"
+
+tweets <- tweets %>% 
+  select(text)
+
+
+  str_extract_all(tweets$text, user_pattern)
+  
+  #OR
+  
+tweets <- tweets %>% 
+  pull(text) %>%
+  str_extract_all(user_pattern)
+  
+  
+#Sean's example
+
+cc_messages <- tweets %>% 
+  mutate(who_tweet = str_extract_all(text, "@[a-zA-z0-9_]+"), .after = tweet_id) %>% 
+  mutate(who_tweet = str_remove(who_tweet, "@")) %>%
+  mutate(who_tweet = na_if(who_tweet, "character(0)")) %>% 
+  filter(is_retweet == FALSE) %>% 
+  drop_na(who_tweet)
+  
+cc_messages
+
+```
+
+*John's summary*
+
+- break it down
+- work on a subset first
+- build it up one step a time
 
