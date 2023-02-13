@@ -40,6 +40,7 @@ SELECT
     COUNT(local_account_no IS NULL) 
 FROM pay_details;
 
+
 /* Q6 */
 
 SELECT
@@ -111,7 +112,7 @@ WHERE email LIKE '%yahoo%';
 /* Q13 */
 
 SELECT 
-    COUNT(pension_enrol) AS no_in_pension
+    COUNT(pension_enrol) AS not_in_pension
 FROM employees 
 WHERE pension_enrol = TRUE
 AND (country != 'France')
@@ -123,8 +124,8 @@ OR (country != 'Germany');
 SELECT
     MAX(salary)
 FROM employees
-WHERE department = 'Engineering'
-AND fte_hours = '1.0';
+WHERE (department = 'Engineering')
+AND (fte_hours = '1.0');
 
 
 /* Q15 */
@@ -146,9 +147,7 @@ SELECT
     CONCAT(first_name, ' ', last_name,
     ' - ', department) AS badge_label
 FROM employees
-WHERE first_name IS NOT NULL 
-AND last_name IS NOT NULL 
-AND department IS NOT NULL;
+WHERE (first_name, last_name, department) IS NOT NULL;
 
 
 
@@ -161,10 +160,7 @@ SELECT
     EXTRACT(YEAR FROM start_date), ')') 
     AS badge_label
 FROM employees
-WHERE first_name IS NOT NULL 
-AND last_name IS NOT NULL 
-AND department IS NOT NULL
-AND start_date IS NOT NULL;
+WHERE (first_name, last_name, department) IS NOT NULL;
 
 
 
@@ -178,7 +174,8 @@ SELECT
         WHEN salary = NULL THEN 'NULL'
         WHEN salary < 40000 THEN 'low'
         WHEN salary >= 40000 THEN 'high'
-    END AS salary_class
+        END 
+        AS salary_class
 FROM employees
 
 
