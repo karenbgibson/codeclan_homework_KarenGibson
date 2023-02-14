@@ -154,14 +154,13 @@ WHERE (first_name, last_name, department) IS NOT NULL;
 /* Q17 */
 
 SELECT
-    CONCAT(first_name, ' ', last_name,
-    ' - ', department, '(joined - ', 
+    concat(first_name, ' ', last_name,
+    ' - ', department, ' ', '(joined - ', 
     TO_CHAR(start_date, 'Month'), ' ', 
     EXTRACT(YEAR FROM start_date), ')') 
     AS badge_label
 FROM employees
 WHERE (first_name, last_name, department) IS NOT NULL;
-
 
 
 /* Q18 */
@@ -178,5 +177,14 @@ SELECT
         AS salary_class
 FROM employees
 
+
+-- revision
+
+SELECT
+count(*) AS count_star,
+count(id) AS count_id,
+count(email) AS count_email
+FROM employees 
+WHERE department = 'Human Resources';
 
 
