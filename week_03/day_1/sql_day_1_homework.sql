@@ -155,7 +155,7 @@ WHERE (first_name, last_name, department) IS NOT NULL;
 
 SELECT
     CONCAT(first_name, ' ', last_name,
-    ' - ', department, '(joined ', 
+    ' - ', department, '(joined - ', 
     TO_CHAR(start_date, 'Month'), ' ', 
     EXTRACT(YEAR FROM start_date), ')') 
     AS badge_label
