@@ -92,18 +92,18 @@ SELECT
     teams.id AS team_id,
     teams.name,
     count(employees.id) AS no_in_team
-FROM teams LEFT JOIN employees 
+FROM teams INNER JOIN employees 
     ON employees.team_id = teams.id
 GROUP BY teams.id
 ORDER BY no_in_team DESC;
 
--- b.
+-- b. (can use NUMERIC or INT in CAST below)
 
 SELECT
     teams.id AS team_id,
     teams.name,
     count(employees.id) AS no_in_team,
-    CAST(teams.charge_cost AS INT) * count(employees.id)
+    CAST(teams.charge_cost AS NUMERIC) * count(employees.id)
     AS total_day_charge
 FROM teams LEFT JOIN employees 
     ON employees.team_id = teams.id
@@ -129,12 +129,14 @@ HAVING (CAST(teams.charge_cost AS INT) * count(employees.id)) > 5000;
 
 SELECT
     count(DISTINCT (employee_id))
+    AS no_employees_on_committees
 FROM employees_committees;
 
 -- Question 6.
 
 SELECT
     count(employees.id)
+    AS no_employees_on_committees
 FROM employees FULL JOIN employees_committees AS ec 
     ON employees.id = ec.employee_id
 WHERE ec.committee_id IS NULL;
