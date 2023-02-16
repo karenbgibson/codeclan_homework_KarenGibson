@@ -50,7 +50,7 @@ SELECT
     count(pension_enrol),
     pension_enrol 
 FROM employees 
-GROUP BY pension_enrol
+GROUP BY pension_enrol;
 
 -- Question 7.
 
@@ -140,9 +140,9 @@ WHERE country = 'Japan'
     fte_hours 
 FROM employees
 GROUP BY fte_hours
-ORDER BY count(*)
+ORDER BY count(*) ASC NULLS LAST
 LIMIT 1)
-ORDER BY salary ASC 
+ORDER BY salary ASC NULLS LAST
 LIMIT 1;
 
 
