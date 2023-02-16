@@ -174,6 +174,21 @@ first_name ASC;
 
 -- Question 16
 
+--attempting to round answer to percentage
+
+SELECT
+    department,
+    sum(CAST((grade = 1) AS INT)) AS grade_1_total,
+    sum(CAST((grade != 1) AS INT)) AS grade_not_1,
+    CONCAT((ROUND(CAST(sum(CAST((grade = 1) AS INT)) AS REAL) /
+    CAST((sum(CAST((grade != 1) AS INT))) +
+    sum(CAST((grade = 1) AS INT)) AS REAL)
+    * 100),2), '%') AS proportion_grade_1
+FROM employees 
+GROUP BY department;
+
+-- attempting without rounding
+
 SELECT
     department,
     sum(CAST((grade = 1) AS INT)) AS grade_1_total,
@@ -181,12 +196,13 @@ SELECT
     CONCAT(CAST(sum(CAST((grade = 1) AS INT)) AS REAL) /
     CAST((sum(CAST((grade != 1) AS INT))) +
     sum(CAST((grade = 1) AS INT)) AS REAL)
-    * 100, '%') AS grade_proportion
+    * 100, '%') AS proportion_grade_1
 FROM employees 
 GROUP BY department;
 
+
 --^^ I really wanted to round the above grade_proportion as a percentage
--- with 2 decimal places but couldn't get the ROUND function to work.
+-- with 2 decimal places but couldn't get the ROUND function to work properly.
 
 
 
