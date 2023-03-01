@@ -79,8 +79,13 @@ revenue_and_cost <- monthly_sales %>%
 ggplot(revenue_and_cost) +
   geom_line(aes(x = Date,
                y = Amount,
-               group = Cashflow,
-               colour = Cashflow))
+               group = Cashflow, # no need to group as specifying by colour
+               colour = Cashflow)) +
+  scale_y_continuous(               # to add y axis scale and ticks
+    expand = c(0,0), # starting at 0
+    limits = c(0, 3000), # limited at 3000
+    breaks = seq(0, 3000, 250) # tick mark labels
+  )
 
 ```
 
@@ -99,6 +104,17 @@ ggplot(competitors) +
       colour = Company) +
   geom_area()
 
+
+## class walk through
+
+options(scipen = 10) # to remove scientific notation
+competitors %>% 
+  ggplot(aes(x = Year,
+             y = Revenue,
+             fill = Company)) +
+  geom_area() +
+  theme_classic()
+
 ```
 
 
@@ -116,6 +132,15 @@ ggplot(competitors) +
       colour = Company) +
   geom_line(aes(group = Company)) +
     geom_point(alpha = 0.5)
+
+## class walk through
+
+competitors %>% 
+  ggplot(aes(x = Year,
+             y = Revenue,
+             colour = Company)) +
+  geom_line() +
+  geom_point()
 
 
 ```
@@ -137,6 +162,15 @@ ggplot(device_data) +
                 colour = device)) +
   facet_wrap(~ device,
              ncol = 2)
+
+## class walk through
+
+device_data %>% 
+  mutate(decimal_hour = hours + (mins/60)) %>% 
+  ggplot(aes(x = decimal_hour,
+             y = counts)) +
+  geom_line(aes(col = device)) +
+  facet_wrap(device ~ id)
 
 
 ```
@@ -287,6 +321,17 @@ ggplot(competitors) +
   
 ## would like to change values in y axis to read 500k, 1 million, 1.5 million,
 ## 2 million but unsure how
+## 
+## class walk through
+
+
+competitors %>% 
+  ggplot(aes(x = Year,
+             y = Revenue,
+             col = Company)) +
+  geom_line() +
+  geom_point() +
+  scale_colour_manual(values = col_scheme)
 
 ```
 
@@ -313,6 +358,20 @@ ggplot(device_data) +
                                     face = "bold",
                                     colour = "black"))
              
+
+```
+
+```{r}
+
+## for part two should have created own them to use throughout. 
+
+theme_corporate <- theme(
+  text = element_text(size = 12),
+  title = element_text(size = 14),
+  axis.text = element_text(size = 9),
+  panel.background = element_rect(fill = "white"),
+  panel.grid = element_line(colour = "grey80")
+)
 
 ```
 
