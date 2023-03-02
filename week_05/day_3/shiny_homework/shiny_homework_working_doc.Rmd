@@ -1,0 +1,36 @@
+---
+title: "Shiny homework working doc"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+
+library(tidyverse)
+
+nyc_dogs <- CodeClanData::nyc_dogs
+
+nyc_dogs
+
+```
+
+
+```{r}
+
+nyc_dogs %>% 
+  filter(breed == "Afghan Hound") %>%
+      ggplot() +
+      aes(x = borough,
+          fill = borough) +
+      geom_bar() +
+  labs(x = "",
+     y = "") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+```
+
+Select a breed. Show how many of the breed live in each borough. 

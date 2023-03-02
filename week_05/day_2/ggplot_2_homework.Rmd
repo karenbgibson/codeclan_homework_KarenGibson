@@ -197,7 +197,7 @@ ggplot(backpain_sex) +
   aes(x = back_problems_yes_no, 
       y = proportion_with_backpain, 
       fill = sex) +
-  geom_bar(stat = "identity",
+  geom_col(stat = "identity",
            position = "dodge") +
   labs(title = "Proportion of Students Reporting Back Pain by gender", 
        x = "Back Pain", 
@@ -225,6 +225,7 @@ Try both `backpack_weight` and `body_weight` as well as the `ratio`.
 **Question 1.** 
 
 Does reported backpain differ across the year groups? Ignore year 0 in your data.  
+
 
 
 **Question 2.** 
