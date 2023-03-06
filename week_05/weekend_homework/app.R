@@ -5,6 +5,9 @@ library(plotly)
 
 game_sales <- CodeClanData::game_sales
 
+## finding the average rating of a game genre based on both the user score and 
+## critic score
+
 avg_ratings <- game_sales %>% 
   group_by(genre) %>% 
   mutate(genre_avg_critic_score = mean(critic_score)) %>% 
@@ -25,6 +28,9 @@ score_type_list <- avg_ratings %>%
   distinct(genre_avg_score_type) %>% 
   pull()
 
+## finding the total sales performance for each developer from the years 
+## 2000 - 2016.
+
 sales_performance_from_2000 <- game_sales %>% 
   filter(year_of_release %in% c(2000:2016)) %>% 
   group_by(developer, year_of_release) %>% 
@@ -38,6 +44,8 @@ sales_performance_from_2000 <- game_sales %>%
 year_choice <- sales_performance_from_2000 %>% 
   distinct(year_of_release) %>% 
   pull()
+
+## finding thge games that are unique to specific gaming platforms. 
 
 exclusive_games <- game_sales %>%
   select(name, platform) %>% 
@@ -78,7 +86,7 @@ ui <- fluidPage(
   titlePanel(tags$h4(tags$b("Insights: Video Games"))),
   theme = bs_theme(bootswatch = "solar"),
   
-  fluidRow(    
+  fluidRow( ## adding radio buttons for user to compare average ratings by genre
     column(
       width = 3,
       radioButtons(inputId = "score_type", 
@@ -95,7 +103,7 @@ ui <- fluidPage(
   
   tags$br(),
     
-    fluidRow(
+    fluidRow( ## adding drop down for user to select particular year for sales comparison
       column(
         width = 3,
         
@@ -113,7 +121,7 @@ ui <- fluidPage(
     
     
     fluidRow(
-      selectInput(
+      selectInput(## adding drop down for user to view exclusive games by platform 
         inputId = "platform", 
         label = (tags$i("Platform:")),
         choices = platform_choice
@@ -124,6 +132,11 @@ ui <- fluidPage(
   )
 
 server <- function(input, output, session) {
+  
+  ## the ratings plot gives the user opportunity to see the best performing
+  ## game genres based on user reviews and critics reviews. This will give the
+  ## user the opportunity to assess which type of game might be most enjoayable
+  ## to play.
   
   output$avg_ratings_plot <- renderPlot(expr = {
     avg_ratings %>%
@@ -150,6 +163,11 @@ server <- function(input, output, session) {
   }
   )
   
+  ## the sales performance plot allows the user to look at the sales performance
+  ## of each developer, based on the input year selected. For example, this could
+  ## allow the user to see which developer was most successful in one particular
+  ## year - suggesting they had the most popular games in this year - which 
+  ## could influence which games the user plays based on the success of sales. 
   
   output$sales_performance_plot <- renderPlot(expr = {
     sales_performance_from_2000 %>%
@@ -175,6 +193,10 @@ server <- function(input, output, session) {
       coord_flip()
   }
   )
+  
+  ## the data table provides the user information as to what games are exclusive
+  ## to each platform. This gives the user the opportunity to find what console 
+  ## they need to have for any particular exclusive game they would like to play
   
   output$exclusive_games <- DT::renderDataTable({
     exclusive_games %>%
