@@ -10,9 +10,7 @@ output:
   pdf_document: default
 ---
 
-## The Titanic
-
-A data set detailing the survival or death of passengers and crew members on the RMS Titanic is given in the `data` folder for this homework - use this data and **not** the built-in `Titanic` dataset in `R`. 
+# 1.1. The Titanic
 
 ```{r}
 
@@ -25,7 +23,6 @@ titanic <- read_csv("data/titanic.csv")
 
 ```
 
-## MVP 
 
 ```{r}
 
@@ -114,7 +111,7 @@ The probability of surviving if a passenger member is 0.3796507
 Our results show that there was a slightly higher rate of survival for passengers
 than for crew members. 
 
-# Extension
+# 1.2 Probability Consolidation Questions
 
 *Question 1*
 
@@ -298,11 +295,5 @@ p_rolling_123456_comb
 ```
 
 The probability of rolling 1, 2, 3, 4, 5, 6 in any order is 0.0154321
-
-
-
-
-
-
 
 
