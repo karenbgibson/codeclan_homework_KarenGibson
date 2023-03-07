@@ -139,6 +139,7 @@ p_less_than_5
 The probability of rolling one six sided die and getting a number less than 5
 is 0.66666 (or 2/3)
 
+
 *Question 2*
 
 How many outcomes are there in the sample space of an experiment in which we 
