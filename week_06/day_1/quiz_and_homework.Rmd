@@ -1,0 +1,308 @@
+---
+title: "Probability homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+---
+
+## The Titanic
+
+A data set detailing the survival or death of passengers and crew members on the RMS Titanic is given in the `data` folder for this homework - use this data and **not** the built-in `Titanic` dataset in `R`. 
+
+```{r}
+
+library(gtools)
+library(tidyverse)
+library(janitor)
+source("prob.R")
+
+titanic <- read_csv("data/titanic.csv")
+
+```
+
+## MVP 
+
+```{r}
+
+titanic %>% 
+  distinct(class)
+
+crew_list <- c("engineering crew", "victualling crew", "restaurant staff", "deck crew")
+
+# adding crew column
+
+titanic <- titanic %>% 
+  mutate(crew = if_else(
+    class %in% crew_list, "TRUE", 
+    "FALSE")
+  )
+
+```
+
+```{r}
+
+contingency_table <- titanic %>% 
+  tabyl(survived, crew)
+
+contingency_table
+
+prob_table <- contingency_table %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all")
+
+prob_table
+
+```
+
+Calculate the conditional probabilities prob(survived∣crew)
+and prob(survived∣passenger)to settle this dispute.
+
+*Step 1: calculating conditional probability of prob(survived | crew)*
+
+p(survived GIVEN crew) = p(survived AND crew) / p(crew)
+
+```{r}
+
+
+
+p_survived_and_crew <- titanic %>% 
+  filter(survived == "yes",
+         crew == TRUE) %>% 
+  summarise(p = n()/nrow(titanic))
+
+p_crew <- titanic %>% 
+  filter(crew == TRUE) %>% 
+  summarise(p = n()/nrow(titanic))
+
+p_survived_given_crew <- p_survived_and_crew / p_crew
+
+p_survived_given_crew
+
+
+```
+
+The probability of surviving if a crew member is 0.2370787
+
+*Step 2: calculating conditional probability of prob(survived | passenger)*
+
+p(survived GIVEN passenger) = p(survived AND passenger) / p(passenger)
+
+```{r}
+
+p_survived_and_passenger <- titanic %>% 
+  filter(survived == "yes",
+         crew == FALSE) %>% 
+  summarise(p = n()/nrow(titanic))
+
+p_passenger <- titanic %>% 
+  filter(crew == FALSE) %>% 
+  summarise(p = n()/nrow(titanic))
+
+p_survived_given_passenger <- p_survived_and_passenger / p_passenger
+
+p_survived_given_passenger
+
+```
+
+The probability of surviving if a passenger member is 0.3796507
+
+Our results show that there was a slightly higher rate of survival for passengers
+than for crew members. 
+
+# Extension
+
+*Question 1*
+
+If I roll a six-sided dice once, what is the probability of getting a number less than 5?
+ 
+*Answer 1*
+
+```{r}
+
+roll_die_outcomes <- rolldie(1) %>% 
+  summarise(outcomes = n())
+
+
+roll_die_less_than_5 <- rolldie(1) %>% 
+  filter(X1 < 5) %>% 
+  summarise(less_than_5_outcomes = n())
+
+p_less_than_5 <- roll_die_less_than_5 / roll_die_outcomes
+
+p_less_than_5
+
+
+```
+
+The probability of rolling one six sided die and getting a number less than 5
+is 0.66666 (or 2/3)
+
+*Question 2*
+
+How many outcomes are there in the sample space of an experiment in which we 
+toss 3 dice?
+
+*Answer 2* 
+
+```{r}
+
+roll_3_dice_outcomes <- rolldie(3) %>% 
+  summarise(outcomes = n())
+
+
+roll_3_dice_outcomes 
+
+```
+
+The are 216 possible outcomes in an experiment where we toss 3 dice.
+
+
+*Question 3*
+
+In an experiment where we roll four dice:
+
+i. how many outcomes are in the event where the total of the four dice equals 5, 
+6 or 7?
+
+ii. what is the probability of this event?
+
+iii. what assumptions do we apply in answering part ii?
+
+*Answer 3.i*
+
+```{r}
+
+roll_4_dice_total_5_6_7 <- rolldie(4) %>% 
+  mutate(roll_total = X1+X2+X3+X4) %>% 
+  filter(roll_total %in% c(5, 6, 7)) %>% 
+  summarise(outcomes = n()) %>% 
+  pull()
+
+roll_4_dice_total_5_6_7
+
+```
+
+There 34 possible outcomes that total 5, 6 or 7 when rolling 4 dice. 
+
+*Answer 3.ii*
+
+```{r}
+
+roll_4_dice_outcomes <- rolldie(4) %>% 
+  summarise(outcomes = n()) %>% 
+  pull()
+
+
+p_roll_total_5_6_7 <- roll_4_dice_total_5_6_7 / roll_4_dice_outcomes
+
+p_roll_total_5_6_7
+```
+
+The probability of rolling 4 dice and the resulting outcomes totalling 5, 6 or 
+7 is 0.02623457
+
+
+*Answer 3.iii*
+
+We assume that each roll of the dice are completely independent of each other.
+
+
+*Question 4*
+
+Five chairs are placed in a row in a room, along with five people of differing height.
+The people sit down randomly on the chairs. What is the probability that they sit 
+in order of decreasing height, left to right?
+
+*Answer 4*
+
+```{r}
+
+n_height_combinations <- factorial(5)
+
+# number of height combinations is 120. The permutation 1, 2, 3, 4, 5 can only occur
+# once. The probability can be found by:
+
+p_height_order <- 1/n_height_combinations
+
+p_height_order
+
+```
+
+The probability that the 5 people sit in order of decreasing height is 0.008333
+
+*Question 5*
+
+I roll six dice:
+
+i. what is the probability I see the numbers 6, 5, 4, 3, 2 and 1 in order on the dice,
+left to right?
+ii. what is the probability I see one each of the numbers 6, 5, 4, 3, 2 and 1 on the 
+dice regardless of order?
+
+*Answer 5.i*
+
+
+```{r}
+
+roll_6_dice <- rolldie(6) 
+
+roll_6_dice_outcomes <- rolldie(6) %>% 
+  summarise(n()) %>% 
+  pull()
+
+# 46656 different outcomes when rolling 6 dice
+
+# we know that the order 6 5 4 3 2 1 is a permutation that can only occur once,
+# but let's double check anyway:
+
+order_654321 <- roll_6_dice %>% 
+  filter(X1 == 6,
+         X2 == 5,
+         X3 == 4,
+         X4 == 3,
+         X5 == 2,
+         X6 == 1) %>% 
+  summarise(n()) %>% 
+  pull()
+
+p_654321 <- order_654321 / roll_6_dice_outcomes
+
+p_654321
+
+
+```
+
+The probability of the outcome being the numbers 6, 5, 4, 3, 2 and 1 in order on 
+the dice, left to right is 2.143347e-05
+
+*Answer 5.ii*
+
+
+```{r}
+
+# n_of_outcomes of rolling the a combination of 1, 2, 3, 4, 5, 6
+# n = 6, r = 6 
+# formula = n! / (n-r)!.
+
+no_of_outcomes <- factorial(6) / factorial(6-6)
+
+p_rolling_123456_comb <- no_of_outcomes / roll_6_dice_outcomes
+
+p_rolling_123456_comb
+
+```
+
+The probability of rolling 1, 2, 3, 4, 5, 6 in any order is 0.0154321
+
+
+
+
+
+
+
+
