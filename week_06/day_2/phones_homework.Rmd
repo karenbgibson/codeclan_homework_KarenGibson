@@ -1,0 +1,128 @@
+---
+title: "Distributions homework"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+# MVP
+
+```{r}
+
+library(tidyverse)
+library(janitor)
+
+```
+
+
+*Question 1.*
+Load the data, clean_names() and explore it.
+
+*Answer 1.*
+
+```{r}
+
+phones_data <- read_csv("data/20190928-items.csv") %>% 
+  clean_names()
+
+glimpse(phones_data)
+
+```
+*Question 2.*
+Find the brand with the highest numbers of phones in the dataset.
+
+*Answer 2.*
+
+```{r}
+
+phones_data %>% 
+  group_by(brand) %>% 
+  summarise(n_phones = n()) %>% 
+  slice_max(n_phones)
+
+```
+Samsung is the brand with the highest number of phones (397) in the dataset.
+
+*Question 3.*
+For your top brand, plot the distribution of phone ratings as a probability density, overlaying a fitted normal distribution. Do you think the normal distribution provides a good model of these ratings?
+
+```{r}
+
+# getting the mean and sd for Samsung ratings
+
+samsung_summary <- phones_data %>% 
+  filter(brand == "Samsung") %>% 
+  summarise(
+    num = n(),
+    mean = mean(rating),
+    sd = sd(rating)
+  )
+
+# visualising the distribution of Samsung ratings
+
+phones_data %>% 
+  filter(brand == "Samsung") %>% 
+  ggplot() +
+  aes(x = rating) +
+  geom_histogram(aes(y = after_stat(density)),
+                 col = "white", 
+                 binwidth = 1) +
+  stat_function(
+    fun = dnorm, 
+    args = list(
+      mean = samsung_summary$mean,
+      sd = samsung_summary$sd
+    ),
+    col = "darkblue"
+)
+
+```
+
+The normal distribution maps well to our histogram, suggesting
+that it does show a good model of the Samsung ratings. 
+
+
+*Question 4.*
+We can be more quantitative in comparing the distribution of top brand ratings with a normal distribution. You calculated the mean() and sd() of your distribution in an earlier question. Use these values to calculate the proportions of ratings within one-, two- and three standard deviations of the mean. Compare these proportions with those you expect for a normal distribution.
+
+```{r}
+
+one_sd <- phones_data %>%
+  filter(rating >= samsung_summary$mean - samsung_summary$sd) %>%
+  filter(rating <= samsung_summary$mean + samsung_summary$sd) %>%
+  summarise(prop_within_1sd = n() / nrow(samsung_summary))
+
+one_sd
+
+two_sd <- phones_data %>%
+  filter(rating >= samsung_summary$mean - 2*(samsung_summary$sd)) %>%
+  filter(rating <= samsung_summary$mean + 2*(samsung_summary$sd)) %>%
+  summarise(prop_within_2sd = n() / nrow(samsung_summary))
+
+two_sd
+
+three_sd <- phones_data %>%
+  filter(rating >= samsung_summary$mean - 3*(samsung_summary$sd)) %>%
+  filter(rating <= samsung_summary$mean + 3*(samsung_summary$sd)) %>%
+  summarise(prop_within_3sd = n() / nrow(samsung_summary))
+
+three_sd
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
