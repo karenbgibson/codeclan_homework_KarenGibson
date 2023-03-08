@@ -48,6 +48,10 @@ For your top brand, plot the distribution of phone ratings as a probability dens
 
 ```{r}
 
+samsung_ratings <- phones_data %>%
+  filter(brand == "Samsung") %>%
+  select(rating)
+
 # getting the mean and sd for Samsung ratings
 
 samsung_summary <- phones_data %>% 
@@ -60,13 +64,11 @@ samsung_summary <- phones_data %>%
 
 # visualising the distribution of Samsung ratings
 
-phones_data %>% 
-  filter(brand == "Samsung") %>% 
+samsung_ratings %>% 
   ggplot() +
   aes(x = rating) +
   geom_histogram(aes(y = after_stat(density)),
-                 col = "white", 
-                 binwidth = 1) +
+                 col = "white") +
   stat_function(
     fun = dnorm, 
     args = list(
@@ -87,24 +89,24 @@ We can be more quantitative in comparing the distribution of top brand ratings w
 
 ```{r}
 
-one_sd <- phones_data %>%
+one_sd <- samsung_ratings %>%
   filter(rating >= samsung_summary$mean - samsung_summary$sd) %>%
   filter(rating <= samsung_summary$mean + samsung_summary$sd) %>%
-  summarise(prop_within_1sd = n() / nrow(samsung_summary))
+  summarise(prop_within_1sd = n() / nrow(samsung_ratings))
 
 one_sd
 
-two_sd <- phones_data %>%
+two_sd <- samsung_ratings %>%
   filter(rating >= samsung_summary$mean - 2*(samsung_summary$sd)) %>%
   filter(rating <= samsung_summary$mean + 2*(samsung_summary$sd)) %>%
-  summarise(prop_within_2sd = n() / nrow(samsung_summary))
+  summarise(prop_within_2sd = n() / nrow(samsung_ratings))
 
 two_sd
 
-three_sd <- phones_data %>%
+three_sd <- samsung_ratings %>%
   filter(rating >= samsung_summary$mean - 3*(samsung_summary$sd)) %>%
   filter(rating <= samsung_summary$mean + 3*(samsung_summary$sd)) %>%
-  summarise(prop_within_3sd = n() / nrow(samsung_summary))
+  summarise(prop_within_3sd = n() / nrow(samsung_ratings))
 
 three_sd
 
@@ -113,12 +115,21 @@ three_sd
 
 ```
 
+For a normal distribution, expect 68%
+ of values to fall within one standard deviation of the mean. Here, 79%
+ of ratings are within this range, so our distribution is slightly too central.
 
+Adding another standard deviation to either side should increase the proportion of values by 27%
+ to 95%
+ overall in a normal distribution. Our distribution adds 13%
+, going to 92%
+ overall, so there are too few values in the range from one- to two standard deviations.
 
-
-
-
-
+Finally, in a normal distribution, adding a further standard deviation to either side should increase the proportion of values by 4.7%
+ to 99.7%
+ overall. Our distribution adds 6%
+ to 98%
+, so this is pretty close.
 
 
 

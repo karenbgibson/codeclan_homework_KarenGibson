@@ -1,0 +1,131 @@
+---
+title: "Homework - CIs"
+output:
+editor_options: 
+  chunk_output_type: inline
+---
+
+**Task 1.**  
+
+Load the data again, `clean_names()`, and re-familiarise yourself with it
+
+```{r}
+
+library(tidyverse)
+library(janitor)
+library(infer)
+
+ames <- read_csv("data/ames.csv") %>% 
+  clean_names()
+
+```
+
+**Task 2.**  
+Investigate the distribution of `lot_area`. Is the distribution roughly normal? If not, what problems do you find?
+
+```{r}
+
+lot_area_plot <- ames %>% 
+  ggplot() +
+  aes(x = lot_area) +
+  geom_histogram(colour = "white",
+                 fill = "purple",
+                 bins = 50) +
+    stat_function(
+      fun = dnorm,
+      args = list(
+        mean = mean(ames$lot_area),
+        sd = sd(ames$lot_area)
+      ), colour = "red2"
+      )
+
+
+lot_area_plot
+
+```
+
+The distribution does not appear to be normal. The spread of the data, and therefore the scales of the x and y axis make it challenging to fully visualise the distribution. Looking at the dataset we can see that the lot_area data ranges from 1300 to 215245.
+
+
+**Task 3.**  
+Compute and visualise a bootstrap sampling distribution for the `mean(lot_area)` of the sold houses.
+
+```{r}
+
+lot_area_sample <- ames %>% 
+  specify(response = lot_area) %>%  
+  generate(reps = 5000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+lot_area_sample
+
+lot_area_sample %>% 
+  ggplot() +
+  aes(x = stat) +
+  geom_histogram(fill = "yellow3", colour = "white")
+
+```
+
+
+
+**Task 4.**  
+Use your bootstrap distribution to calculate a $95\%$ CI for `mean(lot_area)`, and visualise it on the distribution
+
+```{r}
+
+ci_95 <- lot_area_sample %>% 
+  get_ci(level = 0.95, type = "percentile")
+
+ci_95
+
+```
+
+Our 95% CI has a lower value of 9837 and an upper value of 10442.
+
+**Task 5.**  
+You would like to know the `mean(lot_area)` of the sold houses with higher confidence. Calculate the $99\%$ CI for this variable (you can re-use your bootstrap distribution from above). Is it narrower or broader than the $95\%$ CI? Does that make sense?
+
+```{r}
+
+ci_99 <- lot_area_sample %>% 
+  get_ci(level = 0.99, type = "percentile")
+
+ci_99
+
+```
+
+Our 99% CI has a lower value of 9816 and an upper value of 10553.
+
+This is a wider range than for our 95% CI. This makes sense as we can have higher confidence when looking at a broader range of data. 
+
+
+**Task 6.**  
+Calculate the point estimate of the `mean(lot_area)`
+
+```{r}
+
+mean_lot_area <- lot_area_sample %>% 
+  summarise(point_est = mean(stat))
+
+mean_lot_area
+
+```
+
+The point estimate is 10150. This makes sense as it falls neatly within our confidence interval. 
+
+# Extension
+
+**Task 1.**  
+Calculate a point estimate and $95\%$ CI for the proportion of houses in the data built before 1920.  Does the number of `reps` you use matter? [Investigate `reps` from $200$ up to $50000$, memory of your laptop permitting].
+
+
+
+
+
+
+
+
+
+
+
+
