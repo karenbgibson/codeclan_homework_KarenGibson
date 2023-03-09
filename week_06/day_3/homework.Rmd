@@ -118,7 +118,41 @@ The point estimate is 10150. This makes sense as it falls neatly within our conf
 **Task 1.**  
 Calculate a point estimate and $95\%$ CI for the proportion of houses in the data built before 1920.  Does the number of `reps` you use matter? [Investigate `reps` from $200$ up to $50000$, memory of your laptop permitting].
 
+```{r}
 
+before_1920 <- ames %>% 
+  filter(lot_area < 1920) %>% 
+  specify(response = lot_area) %>%
+  generate(reps = 5000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+before_1920
+
+before_1920_point_est <- ames %>% 
+  filter(lot_area < 1920) %>%
+  summarise(point_est = mean(lot_area))
+
+before_1920_point_est
+
+before_1920_ci_95 <- before_1920 %>% 
+  get_ci(level = 0.95, type = "percentile")
+
+before_1920_ci_95
+
+before_1920_ci_99 <- before_1920 %>% 
+  get_ci(level = 0.99, type = "percentile")
+
+before_1920_ci_99
+
+#ran out of time! 
+
+
+```
+The point estimate for houses built before 1920 is 1659.75.
+
+Our 95% CI has an upper limit of 1619.48 and a lower limit of 1699.68.
+
+Our 99% CI has a lower value of 1606 and an upper value of 1711.
 
 
 
