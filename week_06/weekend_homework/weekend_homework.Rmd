@@ -1,0 +1,234 @@
+---
+title: "Week 6 weekend homework"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+
+```{r}
+
+library(tidyverse)
+library(infer)
+
+msleep <- data(msleep)
+
+```
+
+**Question 2** 
+
+Jabberwockies sleep for around 7 hours a night, on average. Perform an appropriate statistical test to determine whether the mean sleep_total in the sampled population of animal types differs from the typical value for jabberwockies.
+
+**Answer 2**
+
+In this experiment we are comparing the mean of a sampled variable with a null value, we will therefore perform a one-mean test. 
+
+Our null hypothesis is that Jabberwockies sleep on average the same amount of time as the animals in our dataset.
+
+Our alternative hyposthesis is that, on average, Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
+
+Here we are comparing two means from independent samples. 
+
+Step 1: We set a significance level of 5% for our test. 
+
+Step 2: Calculate mean(sleep_total) from msleep dataset (this is the observed statistic from our sample data)
+
+```{r}
+
+(sleep_total_mean <- msleep %>% 
+  summarise(avg_sleep = mean(sleep_total)))
+
+```
+
+We find that the average sleep for all animals in the dataset is 10.43.
+
+Step 3: We generate a null distribution. Inputting mu = 7 as we know that this is the average sleep total for jabberwockies. As we are performing a one mean test, we use a bootstrap sample with our stat = "mean".  
+
+
+```{r}
+
+(q2_null_sample_distribution <- msleep %>% 
+  specify(response = sleep_total) %>% 
+  hypothesise(null = "point", mu = 7) %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "mean"))
+
+```
+
+Step 4: we visualise and calculate our p-value. As our alternative hyposthesis is that on average, Jabberwockies do not sleep the same amount of time as the animals in our dataset we can use direction = "both", i.e. we are not suggesting that jabberwockies sleep more or less than the animals in our dataset, simply that the sleep time is not the same. 
+
+```{r}
+
+(q2_null_sample_distribution %>% 
+  visualise(bins = 30) +
+  shade_pvalue(obs_stat = sleep_total_mean$avg_sleep,
+               direction = "both"))
+
+```
+
+
+```{r}
+
+(q2_null_sample_distribution %>% 
+  get_pvalue(obs_stat = sleep_total_mean$avg_sleep,
+               direction = "both"))
+
+```
+
+Step 5: conclusion
+
+Our p-value for this hyposthesis test is < 1. As this is less than our chosen confidence level of 5%, we can reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
+
+
+**Question 3**
+Perform an appropriate statistical test to determine whether omnivores sleep for significantly longer than herbivores, on average.
+
+**Answer 3**
+
+Our null hyposthes is that, on average, omnivores do not sleep significantly longer than herbivores.
+
+Our alternative hyposthesis is that, on average, omnivores sleep significantly longer than herbivores
+
+Step 1: We set a significance level of 5% for our test. 
+
+Step 2: We calculate the observed statistic using the omnivore and herbivore data from our dataset. 
+
+```{r}
+
+# msleep %>% 
+#  distinct(vore)
+
+(omni_herbi_sleep <- msleep %>%
+   filter(vore %in% c("omni", "herbi")) %>% 
+   select(vore, sleep_total)
+)
+
+(q3_observed_stat <- omni_herbi_sleep %>% 
+    specify(sleep_total ~ vore) %>%
+    calculate(stat = "diff in means", 
+              order = c("omni", "herbi"))
+)
+
+```
+In this experiment, we are comparing two independent means. We therefore use the relevant hypothesis tests for two independent samples. For this, we use permute and our observed stat is the difference between the two mean sleep times for omnivores and herbivores. 
+
+Step 3: We calculate our null sampling distribution
+
+```{r}
+
+(q3_null_sample_distribution <-  omni_herbi_sleep %>%
+  specify(sleep_total ~ vore) %>% 
+  hypothesize(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", c("omni", "herbi"))
+)
+
+```
+
+
+Step 4: We visualise our null sampling distribution and calculate our p-value 
+
+```{r}
+
+(q3_null_sample_distribution %>%
+  visualise() +
+  shade_p_value(obs_stat = q3_observed_stat, 
+                direction = "greater")
+)
+
+```
+
+
+```{r}
+
+q3_null_sample_distribution %>% 
+  get_pvalue(obs_stat = q3_observed_stat, 
+                direction = "greater")
+
+```
+
+Step 5: conclusion
+
+Our p-value for this hyposthesis test is 13% . As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
+
+**Question 4.**
+
+Perform an appropriate statistical test to determine whether the proportion of domesticated animal types in the population of animal types is greater than 5%.
+
+**Answer 4.**
+
+Our null hypothesis is that the proportion of domesticated animal types in the populations of animal types is less than or equal to 5.
+
+Our alternative hyposthesis is that the proportion of domesticated animal types in the population of animal types is greater than 5%.
+
+Step 1: We set a significance level of 5% for our test. 
+
+Step 2: We update our dataset appropriately and calculate the proportion of animals in the dataset that are domesticated. We also calculate our observed statistic for this hypothesis test. 
+
+```{r}
+
+msleep_with_domesticated_info <- msleep %>% 
+  mutate(is_domesticated = if_else(
+    is.na(conservation) | conservation != "domesticated",
+                                   FALSE,
+                                   TRUE))
+
+(q4_observed_stat <- msleep_with_domesticated_info %>% 
+  specify(response = is_domesticated, 
+          success = "TRUE") %>% 
+  calculate(stat = "prop")
+)
+
+
+
+```
+In this experiment, we are using a one-sample hypothesis test for proportion. 
+
+Step 3: We calculate our null sampling distribution
+
+```{r}
+
+(q4_null_distribution <- msleep_with_domesticated_info %>%
+  specify(response = is_domesticated, 
+          success = "TRUE") %>% 
+  hypothesize(null = "point", p = 0.05) %>%
+  generate(reps = 5000, type = "draw") %>%
+  calculate(stat = "prop") 
+)
+
+```
+
+
+Step 4: We visualise our null sampling distribution and calculate our p-value 
+
+```{r}
+
+(q4_null_distribution %>%
+visualise() + 
+  shade_p_value(obs_stat = q4_observed_stat, 
+                direction = "less")
+)
+
+```
+
+
+```{r}
+
+q4_null_distribution %>% 
+  get_pvalue(obs_stat = q4_observed_stat, 
+                direction = "less")
+
+```
+
+Step 5: conclusion
+
+Our p-value for this hyposthesis test is 99%. As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
+
+
+
+
+
+
+
+
