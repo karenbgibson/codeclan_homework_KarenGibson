@@ -1,0 +1,102 @@
+---
+title: "Extension"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+
+library(tidyverse)
+library(arules)
+library(arulesViz)
+transactions <- read_csv("data/online_retail_subset.csv")
+
+
+```
+For the first section we are interested in the purchase of two particular items:
+
+item A - ‘HEART OF WICKER SMALL’ (StockCode 22469)
+item B - ‘LARGE CAKE TOWEL PINK SPOTS’ (StockCode 21110)
+
+**Question 1.**
+Calculate the support for item A (this will be the support for a single item)
+
+**Answer 1** 
+
+sup(A)=P(A)=number of transactions involving A / total number of transactions
+
+```{r}
+
+(support_a <- transactions %>% 
+  filter(StockCode == 22469) %>% 
+  summarise(support = n()/nrow(transactions)))
+
+```
+The support for item A is 0.003.
+
+**Question 2:**
+
+Calculate the support and confidence for rule (A→B). 
+
+**Answer 2**
+
+```{r}
+
+(a_and_b_bought_together <- transactions %>% 
+  filter(StockCode %in% c(22469, 21110)) %>% 
+  summarise(no_of_invoice = duplicated(InvoiceNo)) %>%
+  filter(no_of_invoice == TRUE) %>% 
+  count())
+
+(support_a_b <- a_and_b_bought_together / nrow(transactions))
+
+(confidence_a_b <- support_a_b / support_a)
+
+          
+```
+
+The support for A→B is 0.00023
+The confidence for A→B is 0.06
+
+**Question 3**
+
+Calculate the lift for (A→B)
+
+lift(A→B)=sup(A→B) / sup(A)×sup(B)
+
+```{r}
+
+(support_b <- transactions %>% 
+  filter(StockCode == 21110) %>% 
+  summarise(support = n()/nrow(transactions)))
+
+
+(lift_a_b <- support_a_b / (support_a * support_b))
+
+
+```
+The lift (A→B) is 136.36. We can therefore say that A and B are often purchased at the same time. However, as the support is so small, these transactions do not happen often.
+
+
+```{r}
+
+transactions_reformat <- transactions %>%
+  select(InvoiceNo, Description) %>%
+  na.omit()
+
+write_csv(transactions_reformat, "transactions_reformat.csv")
+
+apriori_format <- read.transactions("transactions_reformat.csv", 
+                                    format = "single", 
+                                    sep = ",", 
+                                    header = TRUE, 
+                                    cols = c("InvoiceNo", "Description"))
+
+```
+
+
+
+
+
+
