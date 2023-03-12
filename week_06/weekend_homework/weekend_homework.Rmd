@@ -5,14 +5,14 @@ editor_options:
   chunk_output_type: inline
 ---
 
-
+# 1.1 Hypothesis testing - practical
 
 ```{r}
 
 library(tidyverse)
 library(infer)
 
-msleep <- data(msleep)
+data(msleep)
 
 ```
 
@@ -36,8 +36,8 @@ Step 2: Calculate mean(sleep_total) from msleep dataset (this is the observed st
 
 ```{r}
 
-(sleep_total_mean <- msleep %>% 
-  summarise(avg_sleep = mean(sleep_total)))
+sleep_total_mean <- msleep %>% 
+  summarise(avg_sleep = mean(sleep_total))
 
 ```
 
@@ -158,7 +158,7 @@ Perform an appropriate statistical test to determine whether the proportion of d
 
 **Answer 4.**
 
-Our null hypothesis is that the proportion of domesticated animal types in the populations of animal types is less than or equal to 5.
+Our null hypothesis is that the proportion of domesticated animal types in the populations of animal types is less than or equal to 5%.
 
 Our alternative hyposthesis is that the proportion of domesticated animal types in the population of animal types is greater than 5%.
 
@@ -226,9 +226,100 @@ Step 5: conclusion
 Our p-value for this hyposthesis test is 99%. As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
 
 
+# 1.2 Hypothesis testing - Defining the Hypothesis
+
+For the following three business problems write out:
+
+- What kind of test you would use
+- H0 and Ha in both mathematical notation and in words.
+- Also state the method you would use to generate the null distribution (bootstrap, permutation or draw).
 
 
+Question 1.
+You work for a independent coffee shop. The boss tells you that she thinks that around 40%
+ of people in the town (population 30,000
+) know of the coffee shop, but you are skeptical of the estimate and think that the actual percentage is higher. You conduct a random survey of 200
+ people in the town, asking if respondents are aware of your coffee shop. You want to use the sample to test the hypothesis that more than 40%
+ of the town’s population have heard of the coffee shop.
+ 
+ 
+**Answer 1.**
 
+Test: one sample hypothesis test - proportion
+
+H0: πaware_of_coffee_shop = 0.4
+Ha: πaware_of_coffee_shop > 0.4
+
+Null hypothesis: the number of people in the two who are aware of the coffee shop is 40%
+
+Alternative hypothesis: the number of people in the town who are aware of the coffee shop is greater than 40%.
+
+Method to generate null distribution: type = "draw"
+
+**Question 2**
+You work for a website design company and have performed an A/B test on the position of a banner on a website promoting a particular item.
+
+You selected five days at random last month and then randomly selected 200 of each sampled day’s users into group A and another 200 of that day’s users into group B. Group A continued to be shown the banner at the right hand side of the webpage (its usual position) while group B was shown the banner at the top of the page. You monitored each sampled user’s interactions with the website, in particular the ‘click through rate’ (CTR) on the banner, i.e. what proportion of sampled users clicked on the banner. You want to use the sampled data to test the hypothesis that website users overall are more likely to click on the banner if positioned at the top of the page.
+
+**Answer 2.**
+
+Test: two sample hypothesis test - paired
+
+H0: μclick_rate_difference = 0
+Ha: μclick_rate_difference > 0
+
+Null hypothesis: the position of the website banner has no bearing on the number of users who will click on it.
+
+Alternative hypothesis: the proportion of website users who click on the banner when at the top right of the page is greater than the proportion of users who click on the banner if it is at the right hand side of the page
+
+Method to generate null distribution: type = "bootstrap"
+
+**Question 3.**
+
+You work as an analyst for a car manufacturing company - they have specific standards they must meet for standards and regulation purposes. You have been asked to check the quality control of the manufacture of a particular car part. You have been given data on a sample of 200 parts produced over the period of a week (the sampled parts were pulled at random from the production line and measured: the factory produced a lot more than 200 parts that week). The specification of the part stipulates a width of 145mm, and the manufacturing process is said to have ‘drifted’ if the mean width of parts differs significantly from 145mm. You want to use the sampled measurements to test whether the process overall has drifted.
+
+**Answer 3.**
+
+Test: one sample hypothesis test - mean
+
+H0: μaverage_width = 145
+Ha: μaverage_width ≠ 145
+
+Null hypothesis: the mean car part measurement is equal to the specification width of 145mm
+
+Alternative hypothesis: the mean car part measurement is not equal to the specification width of 145mm
+
+Method to generate null distribution: type = "bootstrap"
+
+
+# 1.3 Hypothesis Testing - Interpreting the results
+
+For the 3 business problems stated above, imagine we performed you got the following p-values (with the given significance levels) write out your interpretation of the results.
+
+
+**Question 1.**
+
+Coffee shop problem: Significance level: 0.05, calculated p-value: 0.07
+
+**Answer 1**
+
+The p-value is 7% which is greater than our significance level of 5%. This means that we cannot reject our null hyposthesis in favour of our alternative hypothesis, i.e. we cannot say with confidence that more than 40% of the popualtion of the town are aware of the coffee shop. 
+
+**Question 2.**
+
+Website company problem. Significance level: 0.01, p-value: 0.006
+
+**Answer 2**
+
+The p-value is 0.6% which is lower than our significance level of 1%. This means that we can reject our null hyposthesis and say with confidence that the proportion of website users who click on the banner when at the top right of the page is greater than the proportion of users who click on the banner if it is at the right hand side of the page.
+
+**Question 3.**
+
+Manufacturing company problem. Significance level: 0.05, p-value: 0.55
+
+**Answer 3**
+
+The p-value is 5.5% which is higher than our significance level of 5%. This means that we can reject our null hyposthesis in favour of alternative hyposthesis. We can say with confidence that on average the car part measurement is not equal to the specification width of 145mm.
 
 
 
