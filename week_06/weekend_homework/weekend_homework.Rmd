@@ -76,7 +76,7 @@ Step 4: we visualise and calculate our p-value. As our alternative hyposthesis i
 
 Step 5: conclusion
 
-Our p-value for this hypothesis test is < 1. As this is less than our chosen confidence level of 5%, we can reject our null hypothesis in favour of our alternative hypothesis, i.e. we can say with confidence that Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
+Our p-value for this hypothesis test is < 0.001. As this is less than our chosen confidence level of 5%, we can reject our null hypothesis in favour of our alternative hypothesis, i.e. we can say with confidence that Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
 
 
 **Question 3**
@@ -205,7 +205,7 @@ Step 4: We visualise our null sampling distribution and calculate our p-value
 (q4_null_distribution %>%
 visualise() + 
   shade_p_value(obs_stat = q4_observed_stat, 
-                direction = "less")
+                direction = "greater")
 )
 
 ```
@@ -215,7 +215,7 @@ visualise() +
 
 q4_null_distribution %>% 
   get_pvalue(obs_stat = q4_observed_stat, 
-                direction = "less")
+                direction = "greater")
 
 ```
 
@@ -243,12 +243,12 @@ You work for a independent coffee shop. The boss tells you that she thinks that 
  
 **Answer 1.**
 
-Test: one sample hypothesis test - proportion
+Test: one sample hypothesis test - proportion (right-sided)
 
 H0: πaware_of_coffee_shop = 0.4
 Ha: πaware_of_coffee_shop > 0.4
 
-Null hypothesis: the number of people in the two who are aware of the coffee shop is 40%
+Null hypothesis: the number of people in the town who are aware of the coffee shop is 40%
 
 Alternative hypothesis: the number of people in the town who are aware of the coffee shop is greater than 40%.
 
@@ -263,14 +263,15 @@ You selected five days at random last month and then randomly selected 200 of ea
 
 Test: two sample hypothesis test - paired
 
-H0: μclick_rate_difference = 0
-Ha: μclick_rate_difference > 0
+H0: πCTR(top)−πCTR(right)=0
 
-Null hypothesis: the position of the website banner has no bearing on the number of users who will click on it.
+Ha: πCTR(top)−πCTR(right)>0
 
-Alternative hypothesis: the proportion of website users who click on the banner when at the top right of the page is greater than the proportion of users who click on the banner if it is at the right hand side of the page
+H0: the CTR with the banner at the top of the website is the same as (or less than) the CTR with the banner at the right hand side of the website.
 
-Method to generate null distribution: type = "bootstrap"
+Ha: the CTR with the banner at the top of the website is greater than the CTR with the banner at the right hand side of the website.
+
+Method to generate null distribution: type = "permutation"
 
 **Question 3.**
 
@@ -317,7 +318,7 @@ Manufacturing company problem. Significance level: 0.05, p-value: 0.55
 
 **Answer 3**
 
-The p-value is 5.5% which is higher than our significance level of 5%. This means that we can reject our null hypothesis in favour of alternative hypothesis. We can say with confidence that on average the car part measurement is not equal to the specification width of 145mm.
+The p-value is 5.5% which is higher than our significance level of 5%. This means that we fail to reject our null hypothesis in favour of alternative hypothesis. We can say with confidence that on average the car part measurement is equal to the specification width of 145mm.
 
 
 

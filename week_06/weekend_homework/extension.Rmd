@@ -42,10 +42,10 @@ Calculate the support and confidence for rule (A→B).
 ```{r}
 
 (a_and_b_bought_together <- transactions %>% 
-  filter(StockCode %in% c(22469, 21110)) %>% 
-  summarise(no_of_invoice = duplicated(InvoiceNo)) %>%
-  filter(no_of_invoice == TRUE) %>% 
-  count())
+   filter(StockCode %in% c(22469, 21110)) %>% 
+   summarise(no_of_invoice = duplicated(InvoiceNo)) %>%
+   filter(no_of_invoice == TRUE) %>% 
+   count())
 
 (support_a_b <- a_and_b_bought_together / nrow(transactions))
 
