@@ -28,8 +28,6 @@ Our null hypothesis is that Jabberwockies sleep on average the same amount of ti
 
 Our alternative hyposthesis is that, on average, Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
 
-Here we are comparing two means from independent samples. 
-
 Step 1: We set a significance level of 5% for our test. 
 
 Step 2: Calculate mean(sleep_total) from msleep dataset (this is the observed statistic from our sample data)
@@ -78,7 +76,7 @@ Step 4: we visualise and calculate our p-value. As our alternative hyposthesis i
 
 Step 5: conclusion
 
-Our p-value for this hyposthesis test is < 1. As this is less than our chosen confidence level of 5%, we can reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
+Our p-value for this hypothesis test is < 1. As this is less than our chosen confidence level of 5%, we can reject our null hypothesis in favour of our alternative hypothesis, i.e. we can say with confidence that Jabberwockies do not sleep the same amount of time as the animals in our dataset. 
 
 
 **Question 3**
@@ -86,9 +84,9 @@ Perform an appropriate statistical test to determine whether omnivores sleep for
 
 **Answer 3**
 
-Our null hyposthes is that, on average, omnivores do not sleep significantly longer than herbivores.
+Our null hypothesis is that, on average, omnivores do not sleep significantly longer than herbivores.
 
-Our alternative hyposthesis is that, on average, omnivores sleep significantly longer than herbivores
+Our alternative hypothesis is that, on average, omnivores sleep significantly longer than herbivores
 
 Step 1: We set a significance level of 5% for our test. 
 
@@ -150,7 +148,7 @@ q3_null_sample_distribution %>%
 
 Step 5: conclusion
 
-Our p-value for this hyposthesis test is 13% . As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
+Our p-value for this hypothesis test is 13% . As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hypothesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
 
 **Question 4.**
 
@@ -160,7 +158,7 @@ Perform an appropriate statistical test to determine whether the proportion of d
 
 Our null hypothesis is that the proportion of domesticated animal types in the populations of animal types is less than or equal to 5%.
 
-Our alternative hyposthesis is that the proportion of domesticated animal types in the population of animal types is greater than 5%.
+Our alternative hypothesis is that the proportion of domesticated animal types in the population of animal types is greater than 5%.
 
 Step 1: We set a significance level of 5% for our test. 
 
@@ -223,7 +221,7 @@ q4_null_distribution %>%
 
 Step 5: conclusion
 
-Our p-value for this hyposthesis test is 99%. As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hyposthesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
+Our p-value for this hypothesis test is 99%. As this is greater than our chosen confidence level of 5%, we cannot reject our null hypothesis in favour of our alternative hypothesis, i.e. we can say with confidence that, on average, omnivores do not sleep significantly longer than herbivores.
 
 
 # 1.2 Hypothesis testing - Defining the Hypothesis
@@ -303,7 +301,7 @@ Coffee shop problem: Significance level: 0.05, calculated p-value: 0.07
 
 **Answer 1**
 
-The p-value is 7% which is greater than our significance level of 5%. This means that we cannot reject our null hyposthesis in favour of our alternative hypothesis, i.e. we cannot say with confidence that more than 40% of the popualtion of the town are aware of the coffee shop. 
+The p-value is 7% which is greater than our significance level of 5%. This means that we cannot reject our null hypothesis in favour of our alternative hypothesis, i.e. we cannot say with confidence that more than 40% of the population of the town are aware of the coffee shop. 
 
 **Question 2.**
 
@@ -311,7 +309,7 @@ Website company problem. Significance level: 0.01, p-value: 0.006
 
 **Answer 2**
 
-The p-value is 0.6% which is lower than our significance level of 1%. This means that we can reject our null hyposthesis and say with confidence that the proportion of website users who click on the banner when at the top right of the page is greater than the proportion of users who click on the banner if it is at the right hand side of the page.
+The p-value is 0.6% which is lower than our significance level of 1%. This means that we can reject our null hypothesis and say with confidence that the proportion of website users who click on the banner when at the top right of the page is greater than the proportion of users who click on the banner if it is at the right hand side of the page.
 
 **Question 3.**
 
@@ -319,7 +317,7 @@ Manufacturing company problem. Significance level: 0.05, p-value: 0.55
 
 **Answer 3**
 
-The p-value is 5.5% which is higher than our significance level of 5%. This means that we can reject our null hyposthesis in favour of alternative hyposthesis. We can say with confidence that on average the car part measurement is not equal to the specification width of 145mm.
+The p-value is 5.5% which is higher than our significance level of 5%. This means that we can reject our null hypothesis in favour of alternative hypothesis. We can say with confidence that on average the car part measurement is not equal to the specification width of 145mm.
 
 
 

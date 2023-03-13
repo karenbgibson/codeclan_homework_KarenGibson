@@ -24,8 +24,6 @@ Calculate the support for item A (this will be the support for a single item)
 
 **Answer 1** 
 
-sup(A)=P(A)=number of transactions involving A / total number of transactions
-
 ```{r}
 
 (support_a <- transactions %>% 
@@ -63,7 +61,7 @@ The confidence for A→B is 0.06
 
 Calculate the lift for (A→B)
 
-lift(A→B)=sup(A→B) / sup(A)×sup(B)
+**Question 3**
 
 ```{r}
 
