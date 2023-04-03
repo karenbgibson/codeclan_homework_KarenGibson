@@ -1,0 +1,122 @@
+---
+title: "Simple linear regression homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = 'center')
+```
+
+<hr>
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(modelr)
+library(ggfortify)
+```
+
+
+# MVP
+
+The file `project_management.csv` contains data sampled from the recent work schedule of a small construction company. Column `estimated_length` contains the estimated length of a building job in days, while column `actual_length` contains the actual recorded length of the job in days. 
+
+We are interested in determining the accuracy of the job estimations made by the company using simple linear regression, so we will eventually want to run a **simple linear regression** using `actual_length` as the dependent variable, and `estimated_length` as the independent variable.
+
+<br>
+
+* Load the data into a dataframe `project`
+
+```{r}
+
+project <- read_csv("data/project_management.csv")
+
+```
+
+<br>
+
+* Plot the data, taking `estimated_length` as the independent variable and `actual_length` as the dependent variable. 
+
+```{r}
+
+(project_plot <- project %>% 
+  ggplot(aes(x = estimated_length,
+             y = actual_length)) +
+   geom_point())
+
+```
+
+
+<br>
+
+* Calculate the correlation coefficient of `estimated_length` and `actual_length` and interpret the value you obtain.
+
+```{r}
+
+project %>% 
+  summarise(r = cor(estimated_length, actual_length))
+
+```
+
+
+<br>
+
+* Perform a simple linear regression using `actual_length` as the dependent variable, and `estimated_length` as the independent variable. Save the model object to a variable. 
+
+```{r}
+(model <- lm(formula = actual_length ~ estimated_length, # line formula (outcome ~ predictor)
+   data = project))
+
+```
+
+<br>
+
+* Interpret the regression coefficient of `estimated_length` (i.e. slope, gradient) you obtain from the model. How do you interpret the $r^2$ value reported by the model?
+
+
+```{r}
+
+summary(model)
+
+```
+R^2 = 0.6475 means with estimated length as a predictor we can explian 64.75% of the variation in height.
+
+<br>
+
+* Is the relationship statistically significant? Remember, to assess this you need to check the $p$-value of the regression coefficient (or slope/gradient). But you should first check the regression diagnostic plots to see if the $p$-value will be reliable (don't worry about any outlier points you see in the diagnostic plots, we'll return to them in the extension).
+
+```{r}
+
+autoplot(model)
+
+```
+
+```{r}
+
+project %>% 
+  add_predictions(model, var = "pred_length") %>% # var argument names column
+  add_residuals(model, var = "resid_length") %>% 
+  ggplot(aes(x = estimated_length)) +
+  geom_point(aes(y = actual_length)) +
+  geom_line(aes(y = pred_length), colour = "steelblue")
+
+```
+
+p-value: 1.911e-12
+
+The plot distributions look as we would hope and the line of best fit appears to fit our data points well. Our p-value is very small. All of these factors combined suggest that the relationship is statistically significant. 
+
+<hr>
+
+

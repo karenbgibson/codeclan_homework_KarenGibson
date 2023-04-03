@@ -1,0 +1,335 @@
+---
+title: "Interview task"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+  
+---
+
+```{r include = FALSE}
+
+knitr::opts_chunk$set(echo=FALSE)
+
+```
+
+
+#### **Task**
+
+In order to help inform the planning for provision of cancer treatment services in NHS Borders, we would like to gain better understanding of the incidence of cancer in NHS Borders.
+
+#### **Introduction**
+
+NHS Borders is one of 14 regional NHS health boards in Scotland. 
+
+The health board is the 4th smallest, with a population of 116,020, making up 2.1% of Scotland's 5.4 million population. 
+
+Only the island communities of NHS Orkney, NHS Shetland and NHS Western Isles are smaller in population. 
+
+```{r message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(janitor)
+library(stats)
+```
+
+```{r message=FALSE, warning=FALSE}
+
+five_year_cancer_incidence <- read_csv("data/5_year_cancer_incidence.csv") %>% 
+  clean_names()
+
+health_board_codes <- read_csv("data/health_board_codes.csv") %>% 
+  clean_names()
+
+health_board_pop_est <- read_csv("data/health_board_pop_est.csv") %>% 
+  clean_names() %>% 
+  filter(year == "2021",
+         sex == "All") %>% 
+  select(hb, all_ages)
+
+incidence_health_board <- read_csv("data/incidence_by_health_board.csv") %>% 
+  clean_names()
+
+```
+
+```{r}
+
+#adding health board names to dataset
+
+cancer_incidence_borders <- five_year_cancer_incidence %>% 
+  left_join(health_board_codes, by = "hb") %>% 
+  filter(hb_name == "NHS Borders") %>% 
+  select(hb_name, year, cancer_site, sex, starts_with("incidences"))
+
+```
+
+```{r}
+cancer_incidence_all_cleaned <- five_year_cancer_incidence %>% 
+  left_join(health_board_codes, by = "hb") %>% 
+  filter(sex == "All",
+         cancer_site == "All cancer types") %>% 
+  select(hb, hb_name, incidences_all_ages)
+```
+
+```{r}
+scotland_percentage_cancer_incidence <- cancer_incidence_all_cleaned %>% 
+  left_join(health_board_pop_est, by = "hb") %>% 
+  drop_na() %>% 
+  select(-hb) %>% 
+  rename(total_popn = all_ages) %>% 
+  mutate(perc_popn_with_cancer = round((incidences_all_ages/total_popn)*100))
+
+```
+
+```{r echo=FALSE}
+
+# health_board_pop_est_overview <- health_board_pop_est %>% 
+#   left_join(health_board_codes, by = "hb") %>% 
+#   select(all_ages, hb_name) %>% 
+#   drop_na() %>% 
+#   mutate(perc_of_popn_scotland = round((all_ages/sum(all_ages))*100, 1))
+# 
+# health_board_pop_est_overview %>% 
+#   summarise(sum(all_ages))
+
+```
+
+#### **Cancer incidence across NHS Scotland regional boards**
+
+To get a better understanding of the distribution of cancer throughout Scotland, I first looked at incidence numbers by health board. To do this I looked at the number of incidences per health board in the 5-year period from 2017-2021 and calculated this as a percentage of the population within each health board. 
+
+The graph below shows that rates of cancer are relatively evenly spread throughout each of the NHS Scotland regional health boards, with 12 out of 14 boards having 3% of their populations with a cancer diagnosis. NHS Borders and NHS Dumfries and Galloway, the 4th and 5th smallest regions respectively, have a slightly higher percentage than average with 4% each. 
+
+```{r}
+
+scotland_percentage_cancer_plot <- scotland_percentage_cancer_incidence %>% 
+  arrange(hb_name) %>% 
+  ggplot(aes(x = hb_name,
+             y = perc_popn_with_cancer,
+             fill = hb_name)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Cancer diagnosis per NHS Scotland health board",
+       subtitle = "2017-2021",
+       y = "\n% of cancer incidence by population",
+       x = "",) +
+  scale_fill_viridis_d()
+  
+
+scotland_percentage_cancer_plot
+
+```
+```{r}
+
+incidence_health_board_all <- incidence_health_board %>%
+  left_join(health_board_codes, by = "hb") %>%
+  filter(sex == "All",
+         cancer_site == "All cancer types") %>% 
+  select(hb_name, year, incidences_all_ages)
+
+
+```
+
+#### **Fluctuating incidences**
+
+Looking specifically at NHS Borders, we see the there is yearly fluctuation in cancer incidence numbers. 
+
+The graph below shows the year on year percentage change of cancer incidences for all cancer types in the Borders from 1997 to 2021. 
+
+The reasons for this fluctuation have not been explored for the purposes of this report, but further research on this topic is recommended to help understand this pattern and perhaps assist with forecasting.
+
+```{r message=FALSE, warning=FALSE, include = FALSE}
+
+percentage_year_change <- incidence_health_board_all %>% 
+  group_by(hb_name) %>% 
+mutate(yearly_change = lag(incidences_all_ages, 1),
+       yearly_percent_change = ((incidences_all_ages - yearly_change)/ yearly_change)*100)
+
+percentage_year_change %>% 
+  filter(hb_name == "NHS Borders")
+
+```
+
+```{r message=FALSE, warning=FALSE}
+
+(nhs_borders_incidence_by_year <- percentage_year_change %>% 
+  filter(hb_name == "NHS Borders") %>% 
+  ggplot(aes(x = year,
+             y = yearly_percent_change,
+             colour = hb_name)) +
+  geom_point() +
+  geom_line() +
+  theme(legend.position = "none") +
+  labs(title = "NHS Borders - all cancer incidences",
+       subtitle = "1997 - 2021",
+       x = "",
+       y = "Diagnosed incidences % change\n"))
+
+```
+
+```{r message=FALSE, warning=FALSE}
+cancer_scotland_crude <- five_year_cancer_incidence %>% 
+  left_join(health_board_codes, by = "hb") %>% 
+  filter(cancer_site == "All cancer types",
+         sex == "All") %>% 
+  select(hb_name, year, cancer_site, sex, crude_rate, 
+         crude_rate_lower95pc_confidence_interval, crude_rate_upper95pc_confidence_interval) %>% 
+  arrange(desc(crude_rate)) %>% 
+  mutate(crude_rate = round(crude_rate)) %>% 
+  drop_na()
+```
+
+```{r message=FALSE, warning=FALSE}
+
+scotland_crude_rate_plot <- cancer_scotland_crude %>% 
+  ggplot(aes(x = hb_name,
+             y = crude_rate,
+             fill = hb_name)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Cancer diagnosis rate by NHS Scotland health board",
+       subtitle = "2017-2021",
+       y = "\n number of cancer patients per 100,000 of population",
+       x = "",) +
+  scale_fill_viridis_d()
+
+```
+
+#### **Most prevalent cancer types in NHS Borders**
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# prevalent_cancers_borders <- five_year_cancer_incidence %>% 
+#   left_join(health_board_codes, by = "hb") %>% 
+#   filter(cancer_site != "All cancer types",
+#          hb_name == "NHS Borders",
+#     sex == "All") %>% 
+#   select(hb_name, year, cancer_site, sex, crude_rate, 
+#          crude_rate_lower95pc_confidence_interval, crude_rate_upper95pc_confidence_interval) %>% 
+#   arrange(desc(crude_rate)) %>% 
+#   mutate(crude_rate = round(crude_rate)) %>% 
+#   drop_na() %>% 
+#   slice_max(crude_rate, n = 5)
+
+```
+
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# prevalent_cancers_plot <- prevalent_cancers_borders %>%
+#   ggplot(aes(x = cancer_site,
+#              y = crude_rate,
+#              fill = cancer_site)) +
+#   geom_col(position = "dodge")
+  
+
+```
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+
+incidence_health_board_border <- incidence_health_board %>%
+  left_join(health_board_codes, by = "hb") %>%
+  filter(hb_name == "NHS Borders",
+         cancer_site %in% c("Non-melanoma skin cancer",
+         "Basal cell carcinoma of the skin",
+         "Breast",
+         "Trachea, bronchus and lung",
+         "Colorectal cancer")) %>%
+  select(hb_name, year, sex, cancer_site, crude_rate)
+
+
+```
+
+
+```{r include = FALSE}
+
+incidence_health_board_border %>% 
+  filter(cancer_site == "Non-melanoma skin cancer",
+         sex != "All",
+         year %in% c(1997, 2021))
+
+```
+
+On review of the 5 year summary of cancer incidence by health board, we find that the five most prevalent cancer types in the NHS Borders are:
+
+1. Non-melanoma skin cancer
+2. Basal cell carcinoma of the skin
+3. Breast
+4. Trachea, bronchus and lung
+5. Colorectal cancer
+
+When looking at the male/female gender split of the most prevalent cancer, non-melanoma skin cancer, we see the crude rate is increasing faster for men.
+
+In 2007 the crude rate for males with non-melanoma skin cancer was 174, jumping to 325 in 2021, an 86% increase. For women the crude rate was 118 in 2007 and 179 in 2021, a 51% increase.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+incidence_health_board_border %>% 
+  filter(cancer_site == "Non-melanoma skin cancer",
+         sex != "All") %>% 
+  ggplot(aes(x = year,
+             y = crude_rate,
+             colour = sex)) +
+  geom_point() +
+  facet_wrap((cancer_site ~ sex), nrow = 5) +
+  geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
+      labs(title = "NHS Borders",
+         subtitle = "Non-melanoma skin cancer rates by gender",
+         y = "Crude rate (per 100,000 person-years at risk)\n",
+         x = "Year") +
+ theme(legend.position = "none")
+  
+
+```
+
+A similar trend occurs when we look at the second most prevalent cancer, basal cell carcinoma of the skin.
+
+In 2007 the crude rate for males with basal cell carcinoma of the skin was 98 and this increased to 157 in 2021, a 60% increase. Compared to women where the crude rate was 88 in 2007 and 122 in 2021, a 28% increase.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+incidence_health_board_border %>% 
+  filter(cancer_site == "Basal cell carcinoma of the skin",
+         sex != "All") %>% 
+  ggplot(aes(x = year,
+             y = crude_rate,
+             colour = sex)) +
+  geom_point() +
+  facet_wrap((cancer_site ~ sex), nrow = 5) +
+  geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
+      labs(title = "NHS Borders",
+         subtitle = "Basal cell carcinoma of the skin rates by gender",
+         y = "Crude rate (per 100,000 person-years at risk)\n",
+         x = "Year") +
+ theme(legend.position = "none")
+
+```
+
+```{r include = FALSE}
+
+incidence_health_board_border %>% 
+  filter(cancer_site == "Basal cell carcinoma of the skin",
+         sex != "All",
+         year %in% c(1997, 2021))
+
+```
+
+
+#### **Conclusion & recommendations**
+
+This report looks at only a subset of cancer incidences in the NHS Borders region. Further research into growth rates of particular cancers and also the impact on age demographics would help provide a more holistic picture of the incidences of cancer and assist with strategic planning.
+
+When reviewing the top two most prevalent cancers, both of which are skin cancers, we see that the crude rate is increasing for both women and men, but for men the rate is increasing at a higher pace.
+
+In terms of strategic planning, the following recommendations are made:
+
+  - advertising and outreach to be focused on skin cancer awareness:
+      - prevention methods and signs to look out for
+      - targeted to the whole population but with a skew toward men
+  - research to be carried out to help understand why men more likely to be diagnosed with these skin cancers
+  - routine screening and early detection methods to be implemented where possible
+
+
