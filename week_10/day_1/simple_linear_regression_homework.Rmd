@@ -90,7 +90,7 @@ project %>%
 summary(model)
 
 ```
-R^2 = 0.6475 means with estimated length as a predictor we can explian 64.75% of the variation in height.
+R^2 = 0.6475 means with estimated length as a predictor we can explain 64.75% of the variation in height.
 
 <br>
 
@@ -115,7 +115,7 @@ project %>%
 
 p-value: 1.911e-12
 
-The plot distributions look as we would hope and the line of best fit appears to fit our data points well. Our p-value is very small. All of these factors combined suggest that the relationship is statistically significant. 
+The plot distributions look as we would hope and the line of best fit appears to fit our data points well. Our p-value is very small. All of these factors combined suggest that the relationship between the estimated_length and actual_length is statistically significant. 
 
 <hr>
 
