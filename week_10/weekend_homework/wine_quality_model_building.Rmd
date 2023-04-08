@@ -1,0 +1,320 @@
+---
+title: "Wine Quality Model Building"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(caret)
+library(tidyverse)
+library(modelr)
+library(GGally)
+library(ggfortify)
+
+```
+
+```{r}
+wine_quality_red <- read_csv("data/wine_quality_red.csv") %>% 
+  mutate(wine_colour = "red")
+wine_quality_white <- read_csv("data/wine_quality_white.csv") %>% 
+  mutate(wine_colour = "white")
+```
+
+```{r}
+wine_quality <- wine_quality_red %>% 
+  bind_rows(wine_quality_white) %>% 
+  select(-wine_id) %>% 
+  mutate(wine_colour = as.factor(wine_colour),
+         region = as.factor(region))
+```
+
+```{r}
+# checking for multi-colinearity 
+alias(quality ~ ., wine_quality)
+# no instances found
+```
+```{r}
+
+wine_quality %>% 
+  distinct(region)
+# 5 variables. Will include for now but may want to group Spain, Italy and France to 'European' variable later.
+
+```
+```{r}
+# setting up k-fold cross validation - selecting 10 folds
+
+cv_10_fold <- trainControl(method = "cv",
+                           number = 10,
+                           savePredictions = TRUE)
+
+
+```
+
+```{r}
+
+# grouping acidity measures together to test which may have biggest influence on quality
+acidity_measures <- wine_quality %>% 
+  select(c(quality, fixed_acidity, volatile_acidity, citric_acid, p_h))
+
+ggpairs(acidity_measures)
+
+ggsave("acidity_measures.png",
+       height = 7,
+       width = 7)
+```
+No overwhelming evidence from pairs plots that one measure of acidity has and impact on quality, might want to look at volatile acidity. 
+
+```{r}
+# grouping categorical measures together to test which may have biggest influence on quality
+categorical_measures <- wine_quality %>% 
+  select(quality, which(sapply(., is.factor)))
+
+ggpairs(categorical_measures)
+
+ggsave("categorical_measures.png")
+
+```
+Again no overwhelming evidence from pairs plot that the categorical measure have much of an impact on the overall quality. Red wine appears to have a slightly lower mean quality score than white wine so this could be worth reviewing.
+
+```{r}
+# grouping all remaining variables
+other_measures <- wine_quality %>% 
+  select(quality, residual_sugar, chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density, sulphates, alcohol)
+
+ggpairs(other_measures)
+
+ggsave("other_measures.png",
+       height = 7,
+       width = 7)
+
+```
+
+Our final pairs plot shows slightly better coefficients than the previous two, there are still no factors that seem overly obvious in having an impact on quality. The variable with the highest coefficient is alcohol (coefficient 0.428), followed by density (coefficient -0.294).
+
+We will test alcohol level as our first predictor and keep density in mind as a potential second predictor.
+
+Before we do this, we will take a look at the model with all predictors:
+
+```{r}
+mod <- lm(quality ~., data = wine_quality)
+
+summary(mod)
+```
+Including all factors in the model gives a low r-squared of 27%.
+
+We will now strip back the model and add alcohol as the first predictor. 
+
+```{r}
+mod1 <- lm(formula = quality ~ alcohol,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod1)
+```
+R squared is only 18% which is very low, however, we will look to build more predictors into the model to increase this number Our p-values are small, confirming that alcohol level is statistically significant in the overall quality of wine.
+
+```{r}
+autoplot(mod1)
+```
+
+Our normal QQ and scale location plots are suitable. Or residual plot is okay, perhaps there are too many data points for us to see clearly as to whether there is any pattern forming, however, our blue line is close to zero which satisfies us at this stage. We can pass our diagnostic test.
+
+Our equation at this stage is:
+
+quality = 2.36 + 0.33alcohol
+
+We can now look at the remaining variables and compare these to the residuals created by our current model. This will give us an indication as to whether there are any variables which are impacting our residuals.
+
+```{r}
+quality_remaining_resid <- wine_quality %>% 
+  add_residuals(mod1) %>% 
+  select(-quality, -alcohol)
+
+ggpairs(quality_remaining_resid)
+
+ggsave("quality_remaining_resid1.png",
+       height = 7,
+       width = 7)
+```
+
+We had previously noted that density might be a good second predictor; however this ggpairs plot shows that it has very little impact on our residuals of modl. This suggests that the quality of the wine changes at similar levels with either alcohol OR density as a predictor. 
+
+Based on our residual plot, the variable where we see the highest coefficient with our residuals is volatile acidity. We had previously noted this may be a suitable predictor when looking at each of the acidity variables. We will now plot this as our second predictor. 
+
+```{r}
+mod2 <- lm(formula = quality ~ alcohol + volatile_acidity,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod2)
+```
+We see a slight increase in our r squared value, rising from 18% with alcohol as the only predictor to 24% when both alcohol and volatile acidity are included. Our p-values remain small so we can be happy that this mod2 is an improvement on mod1. 
+
+We will also check our diagnostic plots:
+
+```{r}
+autoplot(mod2)
+```
+We can be happy that each of these diagnostic plots meet our standards and progress with volatile_acidity as our 2nd predictor. 
+
+We will double check this with an anova test
+
+```{r}
+anova()
+```
+
+
+Our equation at this stage is:
+
+quality = 2.89 + 0.32alcohol - 1.33volatile_acidity
+
+We will again look at the remaining variables and how they compare to the residuals on our current model.
+
+```{r}
+quality_remaining_resid2 <- wine_quality %>% 
+  add_residuals(mod1) %>% 
+  select(-quality, -alcohol, -volatile_acidity)
+
+ggpairs(quality_remaining_resid2)
+
+ggsave("quality_remaining_resid2.png",
+       height = 7,
+       width = 7)
+```
+From this plot we see the highest coefficient with the variable free_sulfur_dioxide. We also still see the slightly different mean values when reviewing the wine_colour boxplot.
+
+We will add free_sulfur_dioxide as our third predictor.
+
+```{r}
+mod3a <- lm(formula = quality ~ alcohol + volatile_acidity + free_sulfur_dioxide,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod3a)
+```
+```{r}
+autoplot(mod3a)
+```
+Although our diagnostic plots look suitable and our p-values remain small, our adjusted r-squared has only marginally improved. Instead of adding free sulfur_dioxide as our third predictor, we will test if wine_colour has a better impact on the r-squared value. 
+
+
+```{r}
+mod3b <- lm(formula = quality ~ alcohol + volatile_acidity + wine_colour,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod3b)
+```
+```{r}
+autoplot(mod3b)
+```
+Wine colour has a slightly bigger impact on our r-squared value, raising it to 24.4%. 
+Our p-values remain small and our diagnostic plots looks suitable. Wine colour is therefore added to our model as our third predictor. 
+
+Our equation at this stage is:
+
+quality = 3.15 + 0.33alcohol - 1.68volatile_acidity - 0.21winecolourwhite
+
+Where wine_colour red = 0 and wine_colour white = 1. 
+
+Our process repeats itself again by looking at the updated residuals and the impact each of our variables has on these.
+
+```{r}
+quality_remaining_resid3 <- wine_quality %>% 
+  add_residuals(mod1) %>% 
+  select(-quality, -alcohol, -volatile_acidity, -wine_colour)
+
+ggpairs(quality_remaining_resid3)
+
+ggsave("quality_remaining_resid3.png",
+       height = 7,
+       width = 7)
+```
+
+Once again, free_sulfur_dioxide is appearing as the best option, but with a small coefficient, suggesting that adding this predictor to our data will not have much impact on our r squared value.
+
+```{r}
+wine_quality %>%
+  ggplot(aes(x = free_sulfur_dioxide, y = quality)) + 
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+When visualising the free_sulfur_dioxide level against wine quality, we see the the positive linear regression shows little trend and is impacted by some outliers. We will not add this as our fourth predictor. 
+
+Instead we explore the data to see if there are any variables that show interactions based on the wine_colour. 
+
+```{r}
+wine_quality %>%
+  ggplot(aes(x = p_h, y = quality, colour = wine_colour)) + 
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE)
+```
+We see that the p_h level has an interaction: for red wine the quality decreases as the p_h increases, for white wine the quality increases as p_h increases. We can add this interaction and review our new r squared value to test if this interactive predictor improves our model.
+
+```{r}
+mod4 <- lm(formula = quality ~ alcohol + volatile_acidity + wine_colour + wine_colour:p_h,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod4)
+```
+```{r}
+autoplot(mod4)
+```
+We see a very small increase in R2 from 24.4% to 24.6%. Our diagnostic plots are still suitable. 
+
+Despite this, we now have quite a complex model which is adding little value. Our previous ggpair plots do not indicate that there are any further variables with a high enough coefficient to demonstrate significance in our model. With these factors considered, we will not consider adding any new predictors to our model. Instead, we remove wine_colour and compare whether the interaction between wine_colour:p_h is just as impactful.
+
+```{r}
+mod4a <- lm(formula = quality ~ alcohol + volatile_acidity + wine_colour:p_h,
+                          data = wine_quality)
+```
+
+```{r}
+summary(mod4a)
+```
+Replacing our third predictor wine_colour with out interaction wine_colour:p_h gives an ever slightly high r squared value of 24.45%. As we expect, this value is slightly lower than if we had both predictors in our model; however the difference is marginal. Our adjusted r squared is also only marginally impact and our standard error does not change.
+
+Our final model equation is:
+
+quality = 2.59 + 0.32alcohol - 1.69volatile_acidity + 0.18winecolourred:p_h + 0.12winecolourwhite:p_h
+
+We can now test our model using the cross validation training model that we set up at the beginning of this exercise.
+
+```{r}
+model <- train(quality ~ alcohol + volatile_acidity + wine_colour:p_h, 
+    data = wine_quality,
+    trControl = cv_10_fold,
+    method = "lm")
+```
+
+We can then compare the average r-squared value between the models:
+
+```{r}
+mean(model$resample$Rsquared)
+```
+Our r-squared value is 0.245 which is exactly what we expected from our model. 
+
+Although our model is not a great predictor overall, as it only explains 24% of the variance in the quality of different wines, we can be happy that it is the best model we can build with the data that we have. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

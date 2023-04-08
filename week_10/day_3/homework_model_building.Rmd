@@ -57,6 +57,13 @@ The variable definitions are:
 </div>
 <br>
 
+Explanatory vs Predictive model:
+- explanatory: emphasis on simplicity, "parsimony", lean-ness, to enable us to understand a real world process
+- predictive: emphasis on pure predictive power, e.g. objective measures like r2, etc. Don't care if it's easy/possible to understand "black box" 
+
+Steps:
+- explore - is price normally distributed? If not, do we want to log? 
+- transform - feature engineering (drop data that is not necessary, look for and remove aliases, change variable to numeric, factors, etc.)
 
 # Question 1
 
@@ -69,12 +76,12 @@ kc_house_trimmed <- kc_house %>%
     waterfront == 1 ~ FALSE
   )) %>% 
   mutate(renovated = if_else(
-    yr_renovated == 0, FALSE, TRUE
+    yr_renovated == 0, TRUE, FALSE
   )) %>% 
   select(-yr_renovated)
 ```
     
-`view`, `condition` and `grade` are all categorical ordinal data types.
+`view`, `condition` and `grade` are all categorical ordinal data types. ***should have made these factors***
 
 # Question 2
 
@@ -99,13 +106,22 @@ Systematically build a regression model containing up to **four** main effects (
 houses_tidy_numeric <- kc_house_trimmed %>%
   select_if(is.numeric)
 
+#lambda function (throwaway function)
 houses_tidy_nonnumeric <- kc_house_trimmed %>%
   select_if(function(x) !is.numeric(x)) # how does this work?
+
+#newer method of above: select_if(\(x) !is.numeric(x))
 
 houses_tidy_nonnumeric$price <- kc_house_trimmed$price
 
 ggpairs(houses_tidy_numeric, progress = FALSE)
-ggpairs(houses_tidy_nonnumeric, progress = FALSE)
+ggsave("ggpairsnumeric.png",
+       width = 7,
+       height = 7)
+ggpairs(houses_tidy_nonnumeric)
+ggsave("ggpairsnonumeric.png",
+       width = 7,
+       height = 7)
 ```
 and the same in subsequent rounds of predictor selection with the `resid` column.<br><br>
 Remember, if you are not sure whether including a categorical predictor is statistically justified, run an `anova()` test passing in the models with- and without the categorical predictor and check the p-value of the test.
@@ -113,13 +129,14 @@ Remember, if you are not sure whether including a categorical predictor is stati
 
 Numeric variables that are highly correlated with price: 
 
-- sqft living (0.7)
-- grade (0.67)
+- sqft living (0.7) #should be removed
+- grade (0.67) #should be factor
 - sqft above (0.6)
-- bathrooms (0.53)
+- bathrooms (0.53) # not as significantly important as other factors
 
 Non-numeric variables that are highly correlated with price:
-- waterfront
+- waterfront # yes, look at this
+- grade # should be factor so should be showing here
 
 Predictor 1: sqft_living
 ```{r}
