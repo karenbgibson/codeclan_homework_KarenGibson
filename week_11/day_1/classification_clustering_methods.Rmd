@@ -71,6 +71,8 @@ E.g. if equation 1 = 0.8 and equation 2 = 0.45 then the email would be classed a
 
 *Our "black box" count can be set to any value. A count should not be added to the initial guess, this should only be added to the training data.*
 
+**Visual Example**
+
 ![Source: Stat Quest with Josh Starmer, Naive Bayes, Clearly Explained!!! (www.youtube.com/watch?v=O2L2Uv9pdDA)](naive_bayesian_classification.png)
 
 **Why naive?**
