@@ -1,0 +1,270 @@
+---
+title: "Decision trees homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r, warning = FALSE, message = FALSE}
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+library(GGally)
+library(ggfortify)
+library(janitor)
+library(modelr)
+library(yardstick)
+
+titanic_set <- read_csv('data/titanic_decision_tree_data.csv')
+
+shuffle_index <- sample(1:nrow(titanic_set))
+
+# shuffle the data so class order isn't in order - need this for training/testing split later on 
+titanic_set <- titanic_set[shuffle_index, ]
+```
+
+**Data Dictionary**
+
+  * **sex**: Biological Sex, male or female  
+  * **age_status**: adult or child (child defined as under 16)  
+  * **class** : Ticket class, 1 = 1st (Upper class), 2 = 2nd (Middle Class), 3 = 3rd (Lower Class)    
+  * **port_embarkation**: C = Cherbourg, Q = Queenstown, S = Southampton  
+  * **sibsp** : number of siblings / spouses aboard the Titanic   
+  * **parch**: number of parents / children aboard the Titanic. Some children travelled only with a nanny, therefore parch=0 for them. 
+  * **survived_flag** : did they survive, 0 = No, 1 = Yes  
+
+# MVP 
+
+## Question 1  
+
+Clean data
+
+## Answer 1
+
+```{r}
+skimr::skim(titanic_set) %>% 
+  view()
+
+#NAs in cabin, age and survived
+```
+
+```{r}
+titanic_set_clean <- titanic_set %>% 
+  drop_na(c(survived, age)) %>% 
+  mutate(sex = as.factor(sex),
+         survived = as.factor(if_else(survived == 1, "yes", "no")),
+         pclass = as.factor(pclass),
+         embarked = as.factor(embarked)) %>% 
+  select(-c(1, passenger_id, name, ticket, fare, cabin)) %>% 
+  mutate(age_status = as.factor(if_else(
+    age <= 16, "child", "adult")), .after = age)
+```
+
+## Question 2  
+
+<br> 
+Have a look at your data and create some plots to ensure you know what you're working with before you begin. Write a summary of what you have found in your plots. Which variables do you think might be useful to predict whether or not people are going to die? Knowing this before you start is the best way to have a sanity check that your model is doing a good job.  
+
+<br>
+
+## Answer 2
+
+```{r}
+ggpairs(titanic_set_clean)
+
+ggsave("titanic_pairs.png",
+       height = 7,
+       width = 7)
+```
+
+Looking at our ggpairs, we see that sex, passenger class (pclass) appear to be useful variables. Location of embarkment (embarked) and age status may also be useful.
+
+We can visualise these a bit more clearly by plotting some bar graphs:
+
+```{r}
+titanic_set_clean %>% 
+ggplot(aes(x = sex,  fill = survived)) +
+  geom_bar()
+```
+
+```{r}
+titanic_set_clean %>% 
+ggplot(aes(x = pclass,  fill = survived)) +
+  geom_bar()
+```
+
+```{r}
+titanic_set_clean %>% 
+ggplot(aes(x = embarked,  fill = survived)) +
+  geom_bar()
+```
+
+```{r}
+titanic_set_clean %>% 
+ggplot(aes(x = age_status,  fill = survived)) +
+  geom_bar()
+```
+
+## Question 3  
+
+<br> 
+Now you can start to build your model. Create your testing and training set using an appropriate split. Check you have balanced sets. Write down why you chose the split you did and produce output tables to show whether or not it is balanced. [**Extra** - if you want to force balanced testing and training sets, have a look at the `stratified()` function in package `splitstackshape` (you can specify multiple variables to stratify on by passing a vector of variable names to the `group` argument, and get back testing and training sets with argument `bothSets = TRUE`)]
+
+## Answer 3 
+
+```{r}
+
+n_data <- nrow(titanic_set_clean)
+
+# 714 rows, decide 80/20 train/test split
+
+test_index <- sample(1:n_data, size = n_data*0.2)
+
+titanic_test  <- slice(titanic_set_clean, test_index)
+
+titanic_train <- slice(titanic_set_clean, -test_index)
+```
+
+```{r}
+titanic_set_clean %>%
+ tabyl(survived)
+```
+```{r}
+titanic_train %>%
+ tabyl(survived)
+```
+We see a consistent split between the original dataset and our training dataset. This means that we can be comfortable that our decision tree will not be skewed differently to our dataset and we can continue to build our model. 
+
+## Question 4      
+
+<br> 
+Create your decision tree to try and predict survival probability using an appropriate method, and create a decision tree plot.
+
+## Answer 4
+
+```{r}
+titanic_fit <- rpart(
+  formula = survived ~ ., 
+  data = titanic_train, 
+  method = 'class'
+)
+
+rpart.plot(titanic_fit, 
+           yesno = 2, 
+           fallen.leaves = TRUE, 
+           faclen = 6, 
+           digits = 4)
+```
+
+
+## Question 5    
+
+<br> 
+Write down what this tells you, in detail. What variables are important? What does each node tell you? Who has the highest chance of surviving? Who has the lowest? Provide as much detail as you can.    
+
+<br>
+
+## Answer 5
+
+Our decision tree tells us that the most important variables in the dataset are gender and passenger class. 
+
+Male passengers in passenger class 2 or 3 have the lowest survival rate, 48.6% of all passengers were male and class 2 or 3 did not survive. This can be further broken down by age, males in passenger class 2 or 3 who were older than 9 made up 44.23% of the overall passengers.
+
+Females in passenger class 1 or 2 were the group most likely to survive, of all passengers 22.55% were in this group. 
+
+## Question 6     
+
+<br>  
+Test and add your predictions to your data. Create a confusion matrix. Write down in detail what this tells you for this specific dataset.  
+
+```{r}
+titanic_test_pred <- thrones_test %>%
+  add_predictions(titanic_fit, type = "class")
+```
+
+```{r}
+titanic_test_pred %>%
+  select(sex, pclass, age, sib_sp, survived, pred)
+```
+
+```{r}
+conf_mat <- titanic_test_pred %>%
+              conf_mat(truth = survived, estimate = pred)
+
+conf_mat
+```
+```{r}
+accuracy <- titanic_test_pred %>%
+ accuracy(truth = survived, estimate = pred)
+
+accuracy
+
+specificity <- titanic_test_pred %>%
+ specificity(truth = survived, estimate = pred)
+
+specificity
+
+sensitivity <- titanic_test_pred %>%
+ sensitivity(truth = survived, estimate = pred)
+
+sensitivity
+```
+
+
+
+# Extension  
+
+See how a `ranger()` random forest classifier compares with a single decision tree in terms of performance. Can you tune the values of the `mtry`, `splitrule` and `min.node.size` hyperparameters? Which variables in the dataset turn out to be most important for your best model? The `Kappa` metric might be the best one to focus on if you want to improve performance for an imbalanced data set. Do some research on the definition of `Kappa` before you start.
+
+We provide the code in the dropdown below if you get stuck, but still want to play around with this (note that run time can be up to 5-10 mins for the tuning). **Save your notebook before you begin** in case you need to force quit your session!
+
+<br>
+<details>
+<summary>**Code**</summary>
+
+```{r, eval=FALSE}
+library(ranger)
+
+control <- trainControl(
+  method = "repeatedcv", 
+  number = 5, 
+  repeats = 10
+)
+
+tune_grid = expand.grid(
+  mtry = 1:6,
+  splitrule = c("gini", "extratrees"),
+  min.node.size = c(1, 3, 5)
+)
+```
+
+```{r, eval=FALSE}
+rf_tune <- train(
+  survived_flag ~ ., 
+  data = titanic_train, 
+  method = "ranger",
+  metric = "Kappa",
+  num.trees = 1000,
+  importance = "impurity",
+  tuneGrid = tune_grid, 
+  trControl = control
+)
+
+plot(rf_tune)
+rf_tune
+```
+</details>
+<br>
+
