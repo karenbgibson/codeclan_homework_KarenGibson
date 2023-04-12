@@ -190,7 +190,7 @@ Females in passenger class 1 or 2 were the group most likely to survive, of all 
 Test and add your predictions to your data. Create a confusion matrix. Write down in detail what this tells you for this specific dataset.  
 
 ```{r}
-titanic_test_pred <- thrones_test %>%
+titanic_test_pred <- titanic_test %>%
   add_predictions(titanic_fit, type = "class")
 ```
 
