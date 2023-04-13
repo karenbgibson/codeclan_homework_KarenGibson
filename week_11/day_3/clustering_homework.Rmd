@@ -1,0 +1,101 @@
+---
+title: "Clustering homework"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(broom)
+library(janitor)
+library(corrplot)
+library(factoextra)
+
+mall_customers <- read_csv("data/mall_customers.csv") %>% 
+  clean_names() %>% 
+  select(-customer_id)
+```
+
+
+```{r}
+skimr::skim(mall_customers) %>% 
+  view()
+
+# no missing values 
+```
+
+* We are interested in creating a marketing campaign to target customers based on their spending score and annual income. Perform a k-means clustering to find if there are meaningful clusters in the data to target the customers. 
+
+```{r}
+mall_customers_marketing <- mall_customers %>% 
+  select(annual_income_k, spending_score_1_100) %>% 
+  scale()
+```
+
+```{r}
+fviz_nbclust(mall_customers_marketing, 
+             kmeans, 
+             method = "wss", 
+             nstart = 25)
+```
+
+```{r}
+fviz_nbclust(mall_customers_marketing, kmeans, method = "silhouette")
+```
+
+```{r}
+fviz_nbclust(mall_customers_marketing, kmeans, method = "gap_stat")
+```
+
+It is unclear exactly what the optimum number of clusters indicated by our elbow plot is - perhaps 5. Our silhouette plot suggests 6 and our gap start suggests 1.
+
+As our three k-means test all have different answers, it does not appear that clustering is an appropriate fit for this dataset.
+
+* Perform k-means clustering and chose a value of k.
+```{r}
+#choosing k=5 
+clustered_mall_customers <- kmeans(mall_customers_marketing, 5, nstart = 25)
+
+clustered_mall_customers
+```
+
+
+* Visualise the clustering for your chosen value of k.
+
+```{r}
+clusters <- augment(clustered_mall_customers, mall_customers)
+```
+
+
+```{r}
+
+ggplot(clusters, aes(x = spending_score_1_100, y = annual_income_k, colour = .cluster)) +
+  geom_point()
+
+ggplot(clusters, aes(x = spending_score_1_100, y = age, colour = .cluster)) +
+  geom_point()
+
+ggplot(clusters, aes(x = annual_income_k, y = age, colour = .cluster)) +
+  geom_point()
+```
+
+
+* Do you think the clustering seems a good fit for this data?
+
+As noted above, our three k-means test all have different answers, this would suggst that clustering is not an appropriate fit for this dataset. However, when visualising the data split into 5 clusters, we see nice clear patterns between our two variable, this suggests that clustering is an appropriate method. 
+
+* Comment on the attributes on one or two of the clusters (maybe even give them a label if you like - like in section 4.1 of the 'Segmentation & clustering intro' lesson). 
+
+Our five clusters can be labelled as:
+1 - frequent shoppers with low income
+2 - casual shopper with median income
+3 - infrequent shoppers with low income
+4 - frequent shoppers with high income
+5 - infrequent shoppers with high income
+
+Interestingly, when we plot our spending score cluster against our age variable, we see the customers under 40 all fall into groups 1 and 4. Both of these clusters include our 'frequent' shoppers, which suggeest our products are more appealing to younger shoppers, regardless of income. Or that younger consumers simply shop more.  
+
+This should also be considered when planning our marketing campaign.  
