@@ -1,0 +1,201 @@
+---
+title: "Text Mining Homework"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+    css: ../../../styles.css
+  pdf_document: default
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = FALSE, fig.align = "center", message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(tidytext)
+library(ggwordcloud)
+library(janeaustenr)
+```
+
+# MVP
+
+Using the dataset `austen_books()` from the package `janeaustenr`:
+
+1. Find the most common words in both Pride & Prejudice and Sense & Sensibility.
+
+```{r}
+book_pride <- tibble(
+    text = prideprejudice,
+    sentence = 1:length(prideprejudice)
+  ) %>%
+  unnest_tokens(word, text)
+
+book_pride %>% 
+  count(word, sort = TRUE)
+
+book_sense <- tibble(
+    text = sensesensibility,
+    sentence = 1:length(sensesensibility)
+  ) %>%
+  unnest_tokens(word, text)
+
+book_sense %>% 
+  count(word, sort = TRUE)
+
+
+```
+
+2. Find the most common words in both Pride & Prejudice and Sense & Sensibility, not including stop words.
+
+```{r}
+#choosing to remove stop words from SMART lexicon, selecting top 10 most common words
+book_pride %>%
+  anti_join(filter(stop_words, lexicon == "SMART")) %>%
+  count(word, sort = TRUE) %>% 
+  slice_max(n, n = 10)
+  
+
+book_sense %>%
+  anti_join(filter(stop_words, lexicon == "SMART")) %>%
+  count(word, sort = TRUE) %>% 
+  slice_max(n, n = 10)
+```
+
+3. Find the most common sentiment words in both Pride & Prejudice and Sense & Sensibility.
+
+```{r}
+# testing for sentiment lexicons: bing, loughran, afinn and nrc
+# finding top 10 setiment words for each lexicon
+
+(bing_sentiments_book_pride <- book_pride %>%
+  inner_join(get_sentiments("bing")) %>% 
+  count(word, sort = TRUE) %>% 
+  slice_max(n, n = 10))
+  
+
+(loughran_sentiments_book_pride <- book_pride %>%
+    inner_join(get_sentiments("loughran")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+(afinn_sentiments_book_pride <- book_pride %>%
+    inner_join(get_sentiments("afinn")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+(nrc_sentiments_book_pride <- book_pride %>%
+    inner_join(get_sentiments("nrc")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+# of the top 10 sentiment words in Pride and Prejudice, which appear in all lexicons
+(combined_lexicons_book_pride <- bing_sentiments_book_pride %>% 
+    inner_join(loughran_sentiments_book_pride) %>%  
+    inner_join(afinn_sentiments_book_pride) %>% 
+    inner_join(bing_sentiments_book_pride))
+
+(bing_sentiments_book_sense <- book_sense %>%
+    inner_join(get_sentiments("bing")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+(loughran_sentiments_book_sense <- book_sense %>%
+    inner_join(get_sentiments("loughran")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+(afinn_sentiments_book_sense <- book_sense %>%
+    inner_join(get_sentiments("afinn")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+(nrc_sentiments_book_sense <- book_sense %>%
+    inner_join(get_sentiments("nrc")) %>% 
+    count(word, sort = TRUE) %>% 
+    slice_max(n, n = 10))
+
+# of the top 10 sentiment words in Sense & Sensibility, which appear in all lexicons
+(combined_lexicons_book_sense <- bing_sentiments_book_sense %>% 
+    inner_join(loughran_sentiments_book_sense) %>%  
+    inner_join(afinn_sentiments_book_sense) %>% 
+    inner_join(bing_sentiments_book_sense))
+
+# most popular words included in all lexicons and across both books
+(winning_words <- combined_lexicons_book_pride %>% 
+  inner_join(combined_lexicons_book_pride))
+```
+
+# Extension
+
+Taking your results above. Can you create a plot which visualises the differences between the books?  
+```{r}
+# using the top 10 sentiment words from the NRC lexicon for each book
+
+nrc_pride <- nrc_sentiments_book_pride %>% 
+  mutate(book = "Pride & Prejudice")
+
+nrc_sense <- nrc_sentiments_book_sense %>% 
+  mutate(book = "Sense & Sensibility")
+
+nrc_both <- nrc_pride %>% 
+  bind_rows(nrc_sense)
+
+nrc_both %>% 
+  mutate(word = fct_reorder(word, n, .desc = TRUE)) %>% 
+  ggplot(aes(x = word, y = n, fill = book)) +
+  geom_col(position = "dodge") +
+  labs(x = "\nsentiment word",
+       y = "count of word",
+       fill = "book") +
+  scale_y_continuous(breaks = seq(0, 1500, 250)) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+We see that 6 of the top 10 sentiment words from the NRC lexicon appear in the top 10 list for both books:
+
+  - mother
+  - good
+  - hope
+  - present
+  - happy
+  - feeling
+  
+We also see that Colonel (Brandon) and John (Willoughby) from Sense and Sensibility are the most talked about/refenced characters across both books. 
+
+```{r}
+# using the afinn lexicon we plot the change in sentiment throughout each book
+
+all_afinn_sentiments_pride <- book_pride %>%
+  inner_join(get_sentiments("afinn")) %>% 
+  mutate(book = "Pride & Prejudice")
+
+all_afinn_sentiments_sense <- book_sense %>%
+  inner_join(get_sentiments("afinn")) %>% 
+  mutate(book = "Sense & Sensibility")
+
+all_afinn_sentiments_pride %>% 
+  bind_rows(all_afinn_sentiments_sense) %>% 
+  group_by(book) %>%
+  mutate(word_n = row_number()) %>%
+  mutate(story_position = word_n/max(word_n)) %>% 
+ggplot +
+  aes(x = story_position, y = value, colour = book) +
+  geom_smooth(se = FALSE) +
+  guides(colour = FALSE) +
+  facet_wrap(~book, nrow = 5) +
+  labs(title = "Sentiment change throughout novels",
+       subtitle = "Jane Austen comparison",
+       x = "story position", 
+       y = "avg afinn value")
+
+```
+We see that both books are generally positive and that Sense and Sensibility sends the reader on more of an emotional rollercoaster than Pride and Prejudice! 
