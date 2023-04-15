@@ -8,6 +8,8 @@ output:
     df_print: paged
     css: ../../../styles.css
   pdf_document: default
+editor_options: 
+  chunk_output_type: inline
 ---
 
 
@@ -17,80 +19,199 @@ knitr::opts_chunk$set(fig.align = "center")
 
 # MVP
 
-You have been provided with a set of data on customer purchases of either 'Citrus Hill' (`purchase = 'CH'`) or 'Minute Maid' (`purchase = 'MM'`) orange juice, together with some further attributes of both the customer and the store of purchase. A data dictionary is also provided in the `data` directory.
-
-We would like you to build the best **predictive classifier** you can of whether a customer is likely to buy Citrus Hill or Minute Maid juice. Use **logistic regression** to do this. You should use either train-test splitting or cross-validation to evaluate your classifier. The metric for 'best classifier' will be **highest AUC value** either in the test set (for train-test splitting) or from cross-validation.
-
-**Issues we faced, thoughts we had**
-
-* This is quite a tough, open-ended exercise. We decided early on to use an automated approach to model selection using `glmulti()`, but feel free to use a manual approach if you prefer!
-* The `Purchase` dependent variable will require wrangling to work in logistic regression. We replaced it with a `purchase_mm` logical variable.
-* Wrangle other categorical variables to be factors too.
-* `WeekOfPurchase` is also quite tough to deal with: should it be added as a factor variable (it will lead to many coefficients), left as numeric, or omitted entirely? See if you can come up with a strategy to decide what to do with it.
-* Check for aliased variables and remove any aliases before you set off to find your best models. Remember, you can use something like `alias(purchase_mm ~ ., data = oj)` to do this, the dot `.` here means 'all variables'. Aliased variables will be listed down the left-hand side, and you can subsequently remove them.
-
-**`glmulti()` hints**
-
-If you decide to use `glmulti()` be prepared for your `R` session to hang if you decide to abort a run! The reason for this is that `glmulti()` actually uses a separate Java runtime to do its thing in the background, and unfortunately `R` can't instruct Java to terminate on request. D'oh! Accordingly, make sure you **save any changes** to your work **before** each `glmulti()` run. That way, you can force quit `RStudio` if necessary without losing work. 
-
-Here are some example inputs for using `glmulti()` with logistic regression for a variety of purposes.
-
-* Run an exhaustive search (i.e. all possible models) over all 'main effects only' logistic regression models using BIC as the quality metric
-
-```{r, eval=FALSE}
-glmulti_search_all_mains <- glmulti(
-  purchase_mm ~ ., 
-  data = train,
-  level = 1,               # No interactions considered, main effects only
-  method = "h",            # Exhaustive approach
-  crit = "bic",            # BIC as criteria
-  confsetsize = 10,        # Keep 10 best models
-  plotty = F, 
-  report = T,              # No plots, but provide interim reports
-  fitfunction = "glm",     # glm function
-  family = binomial(link = "logit")) # binomial family for logistic regression
-
-summary(glmulti_search_all_mains)
+```{r}
+library(tidyverse)
+library(janitor)
+library(GGally)
+library(modelr)
+library(magrittr)
+library(pROC)
 ```
 
-* Imagine now you've found the main effects model with lowest BIC, and you would like to add on a single pair interaction considering only main effects in the model. Which single pair addition leads to lowest BIC?
+```{r}
+orange_juice <- read_csv("data/orange_juice.csv") %>% 
+  clean_names() %>% 
+  mutate(purchase_mm = if_else(purchase == "MM", TRUE, FALSE), .after = purchase) %>% 
+  mutate(store_id = as.factor(store_id),
+         special_ch = as.factor(special_ch),
+         special_mm = as.factor(special_mm),
+         store7 = as.factor(store7),
+         store = as.factor(store)) %>% 
+  select(-purchase)
 
-```{r, eval=FALSE}
-glmulti_search_previous_mains_one_pair <- glmulti(
-  purchase_mm ~ var_a + var_b + var_c + var_d + var_e, 
-  data = train,
-  level = 2,               # Interactions considered
-  method = "h",            # Exhaustive approach
-  crit = "bic",            # BIC as criteria
-  confsetsize = 10,        # Keep 10 best models
-  marginality = TRUE,      # consider pairs only if both main effects in model
-  minsize = 6,             # minsize, maxsize and marginality here force 
-  maxsize = 6,             # inclusion of a single pair beyond the five main effects
-  plotty = F, 
-  report = T,              # No plots, but provide interim reports
-  fitfunction = "glm",     # glm function
-  family = binomial(link = "logit")) # binomial family for logistic regression
-
-summary(glmulti_search_previous_mains_one_pair)
+# purchase variable has been removed and replaced with "purchase_mm" variable. Boolean variable where "yes" indicates the customers purchased minute maid and "no" indicates the customer purchased citrus hill
 ```
 
-* In cases where an exhaustive search isn't possible because there are too many possible models to search through, you could try a search using a genetic algorithm. Here, run a genetic algorithm search over all main effects plus pair models, using lowest AIC as the quality criterion
+```{r}
+skimr::skim(orange_juice) %>% 
+  view()
 
-```{r, eval=FALSE}
-glmulti_ga_search_with_pairs_aic <- glmulti(
-  purchase_mm ~ .,
-  data = train,
-  level = 2,               # Interactions considered
-  method = "g",            # Genetic algorithm approach
-  crit = "aic",            # AIC as criteria
-  confsetsize = 10,        # Keep 10 best models
-  marginality = TRUE,      # consider pairs only if both main effects in model
-  plotty = F, 
-  report = T,              # No plots, but provide interim reports
-  fitfunction = "glm",     # glm function
-  family = binomial(link = "logit")) # binomial family for logistic regression
+# no missing values in data
+```
 
-summary(glmulti_ga_search_with_pairs_aic)
+```{r}
+alias(purchase_mm ~ ., data = orange_juice)
+```
+
+```{r}
+# investigating store vs store7
+orange_juice %>% 
+  filter(store7 == "Yes") %>% 
+  distinct(store)
+
+# store7 yes == store0, updating store variable and removing store7 variable
+orange_juice %<>% 
+  select(-store7) %>% 
+  mutate(store = as.numeric(store)) %>% 
+  mutate(store = if_else(store == 0, 7, store)) %>% 
+  mutate(store = as.factor(store))
+
+# checking code has worked
+orange_juice %>% 
+  distinct(store)
+
+```
+```{r}
+# investigating store vs store_id
+orange_juice %>% 
+  distinct(store_id)
+
+# store_id has same distinct values as store, checking if both variables are now identical
+identical(orange_juice$store_id, orange_juice$store)
+
+# confirmed both are identical, removing store and keeping store_id
+orange_juice %<>% 
+  select(-store)
+
+```
+
+```{r}
+# rechecking alias for outstanding common features
+alias(purchase_mm ~ ., data = orange_juice)
+```
+```{r}
+# disc for both drinks can be calculated using the price - sale_price. Removing disc_mm and disc_ch variables
+
+orange_juice %<>%
+  select(-disc_ch, -disc_mm)
+```
+
+On review of weekof_purchase the decision is made to leave this as a numeric variable. Switching to a factor would result in many options and it would be remiss to remove the variable without first checking it's significance. 
+
+```{r}
+# performing ggpairs to find correlation between variables
+# factored variables
+
+oj_factors <- orange_juice %>% 
+  select(purchase_mm, which(sapply(., is.factor)))
+
+ggpairs(oj_factors, aes(colour = purchase_mm), progress = FALSE)
+
+ggsave("oj_factors.png", height = 7, width = 7)
+```
+```{r}
+# performing ggpairs to find correlation between variables
+# numeric variables
+oj_numerics <- orange_juice %>% 
+  select(purchase_mm, which(sapply(., is.numeric)))
+
+ggpairs(oj_numerics, aes(colour = purchase_mm), progress = FALSE)
+
+ggsave("oj_numerics.png", height = 7, width = 7)
+```
+
+Taking a look at our ggpairs we see a lot of variables that appear to have an impact on whether minute maid is purchased or not (purchase_mm):
+- loyal_ch, 
+- price_mm, 
+- sale_price_mm, 
+- list_price_diff,
+- week_of_purchase
+- store_id
+- potentially special_ch or special_mm although unclear
+
+```{r}
+n_rows <- nrow(orange_juice)
+# we know our orange_juice dataset has 1070 variables, which seems quite small. For this reason we will use 80% of the dataset as training set and remaining 20% as testing set:
+
+test_index <- sample(1:n_rows, size = n_rows*0.2)
+
+oj_train <- slice(orange_juice, -test_index)
+oj_test <- slice(orange_juice, test_index)
 ```
 
 
+```{r}
+model1 <- glm(formula = purchase_mm ~ - loyal_ch + price_mm + sale_price_mm +
+               list_price_diff + weekof_purchase + store_id,
+             family = "binomial",
+             data = oj_train)
+
+# disable scientific notation
+options(scipen = 999)
+
+summary(model1)
+```
+The coefficients in the output indicate the average change in log odds of a customer purchasing Minute Maid. The p-value shows us that the majority of factors in our model are statistically significant; however, there does not appear to be statistical significance when looking at store 2 or 3.
+
+Our AIC score for this model is 990.66.
+
+We can now create a second model with store removed and check the AIC score. The lowest AIC score will represent the best model.
+
+```{r}
+model2 <- glm(formula = purchase_mm ~ - loyal_ch + price_mm + sale_price_mm +
+               list_price_diff + weekof_purchase,
+             family = "binomial",
+             data = oj_train)
+
+# disable scientific notation
+options(scipen = 999)
+
+summary(model2)
+```
+
+The AIC score when removing store as a variable in our model is 1079.2. This is higher than our first AIC score of 990.66. This suggests our first model is the best. We can using our training data to test this:
+
+```{r}
+predict_log_test1 <- oj_test %>% 
+  add_predictions(model1, type = "response")
+
+roc_obj1 <- predict_log_test1 %>% 
+  roc(response = purchase_mm, predictor = pred)
+
+roc_curve1 <- ggroc(data = roc_obj1, legacy.axes = TRUE) +
+  coord_fixed() + 
+  ylab("sensitivity (TPR)") +
+  xlab("1-specificity (FPR)")
+
+roc_curve1
+
+auc(roc_obj1)
+
+```
+```{r}
+predict_log_test2 <- oj_test %>% 
+  add_predictions(model2, type = "response")
+
+roc_obj2 <- predict_log_test2 %>% 
+  roc(response = purchase_mm, predictor = pred)
+
+roc_curve2 <- ggroc(data = roc_obj, legacy.axes = TRUE) +
+  coord_fixed() + 
+  ylab("sensitivity (TPR)") +
+  xlab("1-specificity (FPR)")
+
+roc_curve2
+
+auc(roc_obj2)
+```
+The area under the curve for model1 is 0.747, compared to the area under the cover for model2 which is 0.6402. As the model2 auc is smaller, this confirms our assumption that model2 is not the optimum model in this scenario. 
+
+Therefore our best classifier is model1.
+
+Our final equation to calculate our prediction on whether a customer is likely to buy Citrus Hill or Minute Maid juice is:
+
+purchase_mm = 3.89 + 4.92price_mm - 2.46sale_price_mm - 4.905list_price_diff - 0.033weekof_purchase + 0.266store_id2 + 0.546store_id3 - 1.522store_id4 - 1.048store_id7
+
+store_id should be 1 if the store_id in the equation matches the actual store id, and 0 where it does not. 
+
+If our answer if <0.5 then the customer is more likely to purchase Citrus Hill. If the answer is >0.5 the customer is more likely to purchase Minute Maid. 
