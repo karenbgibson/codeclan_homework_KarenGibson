@@ -141,7 +141,7 @@ oj_test <- slice(orange_juice, test_index)
 
 
 ```{r}
-model1 <- glm(formula = purchase_mm ~ - loyal_ch + price_mm + sale_price_mm +
+model1 <- glm(formula = purchase_mm ~ loyal_ch + price_mm + sale_price_mm +
                list_price_diff + weekof_purchase + store_id,
              family = "binomial",
              data = oj_train)
@@ -158,7 +158,7 @@ Our AIC score for this model is 990.66.
 We can now create a second model with store removed and check the AIC score. The lowest AIC score will represent the best model.
 
 ```{r}
-model2 <- glm(formula = purchase_mm ~ - loyal_ch + price_mm + sale_price_mm +
+model2 <- glm(formula = purchase_mm ~ loyal_ch + price_mm + sale_price_mm +
                list_price_diff + weekof_purchase,
              family = "binomial",
              data = oj_train)
